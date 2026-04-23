@@ -1,0 +1,87 @@
+# NOME DA LINGUAGEM
+
+# Descrição
+Compilador da Linguagem `NOME DA LINGUAGEM`.
+Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
+
+# Sumario
+- [To Do](#To-Do)
+- [Tecnologias](#Tecnologias)
+- [Estrutura de Arquivos](#Estrutura-de-Arquivos)
+- [Como Executar](#Como-Executar)
+- [Autores](#Autores)
+
+# To-Do
+- [ ] Documentação da Linguagem
+- [X] Analise Lexica:
+    - [X] Reconhecer tokens
+- [X] Analise Sintatica:
+    - [X] Gramatica
+    - [X] Arvore
+- [ ] Analise Semantica:
+    - [ ] Detectar declarações repetidas ( usar stack ) 
+	- [ ] Detectar variaveis recebendo valores errados ( map )
+    - [ ] Verificar se a função possui Return
+	- [ ] Detectar limite de inteiro e double
+- [ ] Erros claros:
+    - [X] Linha e Coluna
+    - [X] Indicar o lexema errado
+    - [ ] Mensagem clara do erro
+- [ ] Tradução para linguagem ???:
+    - [X] calculadora base 26
+    - [ ] Tradução Simbolo -> Letra
+    - [ ] Prefixo ( Evitar variaveis com nome de palavras reservadas )
+    - [ ] Arrumar arredondamento de numeros
+- [ ] Testes
+    - [X] Analise Lexica
+    - [ ] Analise Sintatica
+    - [ ] Analise Semantica
+    - [ ] Calculadora
+- [ ] ide:
+	- [X] editor de texto
+    - [X] highlight
+    - [X] vim
+    - [X] arvore
+    - [X] erro de compilação
+    - [ ] codigo traduzido
+
+# Tecnologias
+- Spring Boot
+- Java
+- HTML
+- CSS
+- JavaScript
+
+# Estrutura de Arquivos
+
+# Como executar
+## Pré-requisitos
+- Java
+- Maven
+## Clonar repositorio
+```
+```
+## Configurar a porta do servidor
+Altere a porta do servidor no arquivo: `/Compilador/src/main/resources/application.properties`
+## Executar Testes
+```
+mvn test
+```
+## Executar
+Dentro do diretorio `/Compilador`. Execute:
+```
+mvn spring-boot:run
+```
+## Acessar
+Para acessar entre em
+```
+http://[IP]:[PORTA]
+```
+Default: ( na maquina do server )
+```
+http://localhost:3000
+```
+# Autores
+- **Rafael Hideaki Yara**
+- **Mauricio Yudi Kuniyoshi**
+
