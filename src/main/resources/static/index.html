@@ -1,0 +1,91 @@
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link href="estilos.css" rel="stylesheet">
+		<link href="vim/vim.css" rel="stylesheet">
+	</head>
+	<body>
+		<h1>Editor de Texto</h1>
+		<div class="bloco">
+			<div class="metade lista">
+				<div class="tabela_title">
+					<table>
+						<tr>
+							<th> Linguagem </th>
+							<th> ??? </th>
+						</tr>
+					</table>
+				</div>
+				<div class="tabela">
+					<table id="tabela">
+					</table>
+				</div>
+			</div>
+			<div class="metade" id="editor">
+				<div class="borda">
+					<div id="wrap_barra">
+						<div id="barra"> </div>
+						<div id="wrap_highlight">
+							<div id="highlight"></div>
+							<textarea id="code" rows="30" cols="75" spellcheck="false"></textarea>
+						</div>
+					</div>
+					<div class="status_bar">
+						<div>
+							<span> --- </span>	
+							<span id="status"> general </span>
+							<span> --- </span>	
+						</div>
+						<span id="cmd"> </span>
+					</div>
+				</div>
+			</div>
+			<div class="metade lista">
+				<div class="calculadora">
+					<h2> Conversor para Base 26 </h2>
+					<input id="decimal"/>
+					<div class="ans_calc">
+						<span> resultado: </span>
+						<span id="ans_hexavigesimal"> a </span>
+					</div>
+					<button onclick="to_hexavigesimal()"> Converter </button>
+					<h2> Conversor para Base 10 </h2>
+					<input id="hexavigesimal"/>
+					<div class="ans_calc">
+						<span> resultado: </span>
+						<span id="ans_decimal"> 0.0 </span>
+					</div>
+					<button onclick="to_decimal()"> Converter </button>
+				</div>
+				<div class="botao">
+					<button onclick="compilar()"> Compilar </button>
+				</div>
+			</div>
+		</div>
+		<div class="naovisivel" id="resposta">
+			<h1> Resultado </h1>
+			<div class="naovisivel" id="erro">
+				<h2> Erro </h2>
+				<div id="erro_msg"> </div>
+			</div>
+			<div class="bloco" id="traducao">
+				<div class="metade lista">
+					<h2> Arvore </h2>
+					<pre id="arvore"></pre>
+				</div>
+				<div class="metade lista">
+					<h2> Codigo </h2>
+					<pre id="codigo"></pre>
+				</div>
+			</div>
+		</div>
+		<script src="vim/vim.js"		type="module"></script>
+		<script src="vim/barra.js"		type="module"></script>
+		<script src="vim/highlight.js"	type="module"></script>
+		<script src="vim/general.js"	type="module"></script>
+		<script src="vim/visual.js"		type="module"></script>
+		<script src="vim/main_vim.js"	type="module"></script>
+		<script src="script.js"			type="text/javascript"></script>
+	</body>
+</html>

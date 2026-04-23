@@ -1,0 +1,94 @@
+body{
+	margin: 0px;
+	text-align: center;
+	background-color: #363636;
+	color: white;
+	font-family: monospace;
+	padding-bottom:50px;
+	padding-top:50px;
+}
+
+.naovisivel{
+	display:none;
+}
+
+.bloco{
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+}
+.metade{
+	background-color: #565656;
+	padding: 10px;
+	border-radius: 10px;
+	height: 405.733px;
+	border: 2px;
+}
+
+#erro{
+	margin:auto;
+	background-color: #562626;
+	padding: 10px;
+	border-radius: 10px;
+	border: 2px;
+	width:500px;
+}
+
+.lista{
+	display:flex;
+	justify-content:space-around;
+	flex-direction: column;
+}
+
+.ans_calc{
+	margin: 5px;
+}
+
+.botao{
+	padding:20px;
+}
+
+button{
+	width: 200px;
+	height: 50px;
+}
+#arvore, #codigo{
+	text-align: left;
+	height:380px;
+	overflow-y: scroll;
+	background-color:#262626;
+	white-space:pre;
+	padding:5px;
+	margin:auto;
+}
+
+table,tr,th,td{
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+th, td{
+	width: 100px;
+	text-align:center;
+	background-color:#262626;
+}
+
+.tabela_title{
+	margin: auto;
+	width: auto;
+	border: solid 1px;
+	border-bottom: 0px;
+}
+
+.tabela{
+	width: auto;
+	height: 380px;
+	overflow-y: scroll;
+	border: solid 1px;
+}
+
+.borda{
+	background-color:white;
+	padding:1px;
+}
