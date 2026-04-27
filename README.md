@@ -27,14 +27,14 @@ Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
     - [X] Linha e Coluna
     - [X] Indicar o lexema errado
     - [ ] Mensagem clara do erro
-- [ ] Tradução para linguagem ???:
+- [ ] Tradução para linguagem Kotlin:
     - [X] calculadora base 26
     - [ ] Tradução Simbolo -> Letra
     - [ ] Prefixo ( Evitar variaveis com nome de palavras reservadas )
     - [ ] Arrumar arredondamento de numeros
 - [ ] Testes
     - [X] Analise Lexica
-    - [ ] Analise Sintatica
+    - [X] Analise Sintatica
     - [ ] Analise Semantica
     - [ ] Calculadora
 - [ ] ide:
@@ -60,6 +60,7 @@ Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
 - Maven
 ## Clonar repositorio
 ```
+git clone git@github.com:rhy2106/Compilador.git
 ```
 ## Configurar a porta do servidor
 Altere a porta do servidor no arquivo: `/Compilador/src/main/resources/application.properties`
