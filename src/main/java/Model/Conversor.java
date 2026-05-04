@@ -1,4 +1,7 @@
 package Model;
+
+import java.util.HashMap;
+
 public class Conversor{
 	HashMap<Character,Character> dicionario;
 
@@ -7,15 +10,20 @@ public class Conversor{
 		setup_dicionario();
 	}
 
-	public String to_variavel(String prefix, String lexema){
-		String traducao = prefix + "_";
+	public String to_variavel(String lexema){
+		String traducao = "";
 		for(int i = 0; i < lexema.length(); i++){
 			traducao += dicionario.get(lexema.charAt(i));
 		}
 		return traducao;
 	}
+        
+        public String to_str(String lexema){
+            String str = lexema.replace("16", "\"");
+            return str;
+        }
 
-	public double to_decimal(String num){
+	public Number to_decimal(String num){
 		double pre_virgula = 0;
 		boolean negativo = false;
 		int i = 0;
@@ -35,8 +43,12 @@ public class Conversor{
 			pos_virgula = (pos_virgula + num.charAt(i) - 'A') / 26.0;
 			i--;
 		}
-		double ans = (negativo ? -1.0 : 1.0) * (pre_virgula + pos_virgula); 
-		return ans;
+		double ans = (negativo ? -1.0 : 1.0) * (pre_virgula + pos_virgula);
+                
+                if(ans == Math.floor(ans)){
+                    return (int) ans;
+                }
+                else return ans;
 	}
 	public String to_26(double num){
 		String pre_virgula = "";
