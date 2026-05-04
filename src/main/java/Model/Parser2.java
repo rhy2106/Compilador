@@ -5,6 +5,9 @@ public class Parser2{
 	List<Token> tokens;
 	Token token;
 	Arvore raiz;
+        Conversor c = new Conversor();
+        
+        boolean is_main;
 
 	public Parser2(List<Token> tokens){
 		this.tokens = tokens;
@@ -26,6 +29,32 @@ public class Parser2{
 			"\nlinha: " + token.linha + " coluna: " + token.coluna +
 			"\n====================================================="
 			);
+	}
+        
+        public Arvore arvore(){
+		boolean fim = false;
+		while(true){
+			if( token == null
+			|| token.tipo.equals("ACHA")
+			|| token.tipo.equals("FCHA")
+			|| token.tipo.equals("FIM_LINHA")) token = getNextToken();
+			if(token.tipo.startsWith("TIPO")) fim = decFuncao(raiz);
+			else if(token.tipo.equals("EOF")) break;
+			else erro("esperado tipo");
+			if(fim) break;
+		}
+		if(!token.tipo.equals("EOF")) erro("token apos o fim do programa");
+		else token_print(token,raiz);
+
+		return raiz;
+	}
+        
+        void token_print( Token t, Arvore pai){
+		pai.add(new Arvore(t));
+	}
+
+	Arvore token_print( String s){
+		return new Arvore(s);
 	}
 
 	void addToken( Token t, Arvore pai){
@@ -73,17 +102,18 @@ public class Parser2{
 	private boolean sufixDecFuncao(Arvore pai){
 		Arvore node = newTree("sufix declarar funcao");
 		pai.add(node);
-		boolean is_main = false;
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node);
-		else if(token.tipo.equals("MAIN")){
-			addToken(token,node);
+		is_main = false;
+		if(token.tipo.equals("VALOR_ID")){ 
+                    addToken(token,node, "fun " + c.to_variavel(token.lexema));
+                    }else if(token.tipo.equals("MAIN")){
+			addToken(token,node, "fun main");
 			is_main = true;
 		} else{
 			erro("(sufix declarar funcao) Esperado Nome da Funcao");
 			return false;
 		}
 
-		if(token.tipo.equals("AP")) addToken(token,node);
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(sufix declarar funcao) Esperado abrir parenteses (18)");
 			return false;
@@ -93,13 +123,13 @@ public class Parser2{
 			if(!decParam(node)) return false;
 		}
 
-		if(token.tipo.equals("FP")) addToken(token,node);
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
 		else{
 			erro("(sufix declarar funcao) Esperado fechar parenteses (19)");
 			return false;
 		}
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(sufix declarar funcao) Esperado abrir Chaves");
 			return false;
@@ -107,7 +137,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(sufix declarar funcao) Esperado fechar Chaves");
 			return false;
@@ -126,7 +156,7 @@ public class Parser2{
 		Arvore node = newTree("declarar parametros");
 		pai.add(node);
 		if(!tipo(node)) return false;
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node);
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, c.to_variavel(token.lexema));
 		else{
 			erro("(declarar param) Esperado nome do Parametro");
 			return false;
@@ -139,7 +169,7 @@ public class Parser2{
 		Arvore node = newTree("sufix declarar parametros");
 		pai.add(node);
 		if(token.tipo.equals("VIRGULA")){
-			addToken(token,node);
+			addToken(token,node, ", ");
 			if(!decParam(node)) return false;
 		}
 		return true;
@@ -182,9 +212,9 @@ public class Parser2{
 	private boolean cmdPrint(Arvore pai){
 		Arvore node = newTree("cmd print");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "print(");
 		if(!valor(node)) return false;
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ");\n");
 		else{
 			erro("(cmd print) Esperado fim de linha");
 			return false;
@@ -196,12 +226,12 @@ public class Parser2{
 		Arvore node = newTree("cmd input");
 		pai.add(node);
 		addToken(token,node);
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node);
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, c.to_variavel(token.lexema) + " = readln()");
 		else{
 			erro("(cmd input) Esperado variavel");
 			return false;
 		}
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd input) Esperado fim de linha");
 			return false;
@@ -212,11 +242,13 @@ public class Parser2{
 	private boolean cmdReturn(Arvore pai){
 		Arvore node = newTree("cmd return");
 		pai.add(node);
-		addToken(token,node);
+                if(is_main == true) addToken(token,node, "//");
+                else if(is_main == false) addToken(token,node, "return ");
+                
 		if(!token.tipo.equals("FIM_LINHA")){
 			if(!valor(node)) return false;
 		}
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd return) Esperado fim de linha");
 			return false;
@@ -252,7 +284,7 @@ public class Parser2{
 		Arvore node = newTree("cmd expressao");
 		pai.add(node);
 		if(!expressao(node)) return false;
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd expressao) Esperado fim de linha");
 			return false;
@@ -263,7 +295,7 @@ public class Parser2{
 	private boolean expressao(Arvore pai){
 		Arvore node = newTree("expressao");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, c.to_variavel(token.lexema));
 		if(!sufixExpressao(node)) return false;
 		return true;
 	}
@@ -272,14 +304,14 @@ public class Parser2{
 		Arvore node = newTree("sufix expressao");
 		pai.add(node);
 		if(token.tipo.equals("OP_ATR")){
-			addToken(token,node);
+			addToken(token,node, " = ");
 			if(!calculo(node)) return false;
 		} else if(token.tipo.equals("AP")){
-			addToken(token,node);
+			addToken(token,node, "(");
 			if(!token.tipo.equals("FP")){
 				if(!param(node)) return false;
 			}
-			if(token.tipo.equals("FP")) addToken(token,node);
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
 			else erro("(sufix expressao) Esperado fechar Parenteses");
 		} else{
 			erro("(sufix expessao) Expressao Invalida");
@@ -292,7 +324,7 @@ public class Parser2{
 		Arvore node = newTree("cmd declaracao");
 		pai.add(node);
 		if(!declaracao(node)) return false;
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd declaracao) Esperado fim de linha");
 			return false;
@@ -304,10 +336,10 @@ public class Parser2{
 		Arvore node = newTree("declaracao");
 		pai.add(node);
 		if(!tipo(node)) return false;
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node);
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, "var " + c.to_variavel(token.lexema));
 		else erro("(declaracao) Esperado nome da variavel");
 		if(token.tipo.equals("OP_ATR")){
-			addToken(token,node);
+			addToken(token,node, " = ");
 			if(!calculo(node)) return false;
 		} 
 		return true;
@@ -316,9 +348,9 @@ public class Parser2{
 	private boolean cmdIf(Arvore pai){
 		Arvore node = newTree("cmd if");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "if");
 
-		if(token.tipo.equals("AP")) addToken(token,node);
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(cmd if) Esperado abrir parenteses (18)");
 			return false;
@@ -326,13 +358,13 @@ public class Parser2{
 
 		if(!condicao(node)) return false;
 
-		if(token.tipo.equals("FP")) addToken(token,node);
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
 		else{
 			erro("(cmd if) Esperado fechar parenteses (19)");
 			return false;
 		}
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(cmd if) Esperado abrir Chaves");
 			return false;
@@ -340,7 +372,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd if) Esperado fechar Chaves");
 			return false;
@@ -363,9 +395,9 @@ public class Parser2{
 	private boolean cmdElseIf(Arvore pai){
 		Arvore node = newTree("elseif");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "else if");
 
-		if(token.tipo.equals("AP")) addToken(token,node);
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(cmd else if) Esperado abrir parenteses (18)");
 			return false;
@@ -373,13 +405,13 @@ public class Parser2{
 
 		if(!condicao(node)) return false;
 
-		if(token.tipo.equals("FP")) addToken(token,node);
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
 		else{
 			erro("(cmd else if) Esperado fechar parenteses (19)");
 			return false;
 		}
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(cmd else if) Esperado abrir Chaves");
 			return false;
@@ -387,7 +419,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd else if) Esperado fechar Chaves");
 			return false;
@@ -400,9 +432,9 @@ public class Parser2{
 	private boolean cmdElse(Arvore pai){
 		Arvore node = newTree("else");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "else");
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(cmd else) Esperado abrir Chaves");
 			return false;
@@ -410,7 +442,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd else) Esperado fechar Chaves");
 			return false;
@@ -421,9 +453,9 @@ public class Parser2{
 	private boolean cmdWhile(Arvore pai){
 		Arvore node = newTree("while");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "while");
 
-		if(token.tipo.equals("AP")) addToken(token,node);
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(cmd while) Esperado abrir parenteses (18)");
 			return false;
@@ -431,13 +463,13 @@ public class Parser2{
 
 		if(!condicao(node)) return false;
 
-		if(token.tipo.equals("FP")) addToken(token,node);
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
 		else{
 			erro("(cmd while) Esperado fechar parenteses (19)");
 			return false;
 		}
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(cmd while) Esperado abrir Chaves");
 			return false;
@@ -445,7 +477,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd while) Esperado fechar Chaves");
 			return false;
@@ -456,9 +488,9 @@ public class Parser2{
 	private boolean cmdFor(Arvore pai){
 		Arvore node = newTree("for");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, "for");
 
-		if(token.tipo.equals("AP")) addToken(token,node);
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(cmd for) Esperado abrir parenteses (18)");
 			return false;
@@ -466,7 +498,7 @@ public class Parser2{
 
 		if(!declaracao(node)) return false;
 
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, "; ");
 		else{
 			erro("(cmd for) Esperado fim linha");
 			return false;
@@ -474,7 +506,7 @@ public class Parser2{
 
 		if(!condicao(node)) return false;
 
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, "; ");
 		else{
 			erro("(cmd for) Esperado fim linha");
 			return false;
@@ -482,13 +514,13 @@ public class Parser2{
 
 		if(!expressao(node)) return false;
 		
-		if(token.tipo.equals("FP")) addToken(token,node);
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
 		else{
 			erro("(cmd for) Esperado fechar parenteses (19)");
 			return false;
 		}
 
-		if(token.tipo.equals("ACHA")) addToken(token,node);
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
 			erro("(cmd for) Esperado abrir Chaves");
 			return false;
@@ -496,7 +528,7 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
-		if(token.tipo.equals("FCHA")) addToken(token,node);
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd for) Esperado fechar Chaves");
 			return false;
@@ -517,7 +549,7 @@ public class Parser2{
 		Arvore node = newTree("sufix parametros");
 		pai.add(node);
 		if(token.tipo.equals("VIRGULA")){
-			addToken(token,node);
+			addToken(token,node, ", ");
 			if(!param(node)) return false;
 		}
 		return true;
@@ -528,14 +560,21 @@ public class Parser2{
 		pai.add(node);
 
 		if(token.tipo.equals("AP")){
-			addToken(token,node);
+			addToken(token,node, "(");
 			if(!condicao(node)) return false;
-			if(token.tipo.equals("FP")) addToken(token,node);
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
 			else erro("(condicao) Esperado fechar Parenteses");
 		} else{
 			if(!calculo(node)) return false;
 
-			if(token.tipo.startsWith("OP_REL")) addToken(token,node);
+			if(token.tipo.startsWith("OP_REL")){
+                            if(token.tipo.endsWith("MAIOR")) addToken(token,node, " > ");
+                            else if(token.tipo.endsWith("MENOR")) addToken(token,node, " < ");
+                            else if(token.tipo.endsWith("DIFF")) addToken(token,node, " != ");
+                            else if(token.tipo.endsWith("IGUAL")) addToken(token,node, " == ");
+                            else if(token.tipo.endsWith("MAIOR_IGUAL")) addToken(token,node, " >= ");
+                            else if(token.tipo.endsWith("MENOR_IGUAL")) addToken(token,node, " <= ");
+                        }
 			else{
 				erro("(condicao) Esperado Operador relacional");
 				return false;
@@ -551,8 +590,9 @@ public class Parser2{
 		Arvore node = newTree("sufix condicao");
 		pai.add(node);
 		if(token.tipo.startsWith("OP_LOG")){
-			addToken(token,node);
-			if(!condicao(node)) return false;
+			if(token.tipo.endsWith("AND")) addToken(token,node, " && ");
+                        else if(token.tipo.endsWith("OR")) addToken(token,node, " || ");
+                        else if(!condicao(node)) return false;
 		}
 		return true;
 	}
@@ -562,9 +602,9 @@ public class Parser2{
 		pai.add(node);
 
 		if(token.tipo.equals("AP")){
-			addToken(token,node);
+			addToken(token,node, "(");
 			if(!calculo(node)) return false;
-			if(token.tipo.equals("FP")) addToken(token,node);
+			if(token.tipo.equals("FP")) addToken(token,node,")");
 			else erro("(calculo) Esperado fechar Parenteses");
 		} else{
 			if(!valor(node)) return false;
@@ -577,8 +617,13 @@ public class Parser2{
 		Arvore node = newTree("sufix calculo");
 		pai.add(node);
 		if(token.tipo.startsWith("OP_ARI")){
-			addToken(token,node);
-			if(!calculo(node)) return false;
+			if(token.tipo.endsWith("SOMA")) addToken(token,node, " + ");
+                        else if(token.tipo.endsWith("SUBTRACAO")) addToken(token,node, " - ");
+                        else if(token.tipo.endsWith("MULTIPLICACAO")) addToken(token,node, " * ");
+                        else if(token.tipo.endsWith("DIVISAO")) addToken(token,node, " / ");
+                        else if(token.tipo.endsWith("MODULO")) addToken(token,node, " % ");
+                        
+                        if(!calculo(node)) return false;
 		}
 		return true;
 	}
@@ -594,10 +639,10 @@ public class Parser2{
 			if(!nums(node)) return false;
 		} else if(token.tipo.equals("VALOR_ID")){
 			if(!variavel(node)) return false;
-		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node);
+		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
 		else if(token.tipo.equals("VALOR_CHAR")) addToken(token,node);
 		else if(token.tipo.equals("VALOR_BOOL")) addToken(token,node);
-		else if(token.tipo.equals("VALOR_STRING")) addToken(token,node);
+		else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
 		else erro("(valor) Esperado valor");
 		return true;
 	}
@@ -605,7 +650,7 @@ public class Parser2{
 	private boolean variavel(Arvore pai){
 		Arvore node = newTree("variavel");
 		pai.add(node);
-		addToken(token,node);
+		addToken(token,node, c.to_variavel(token.lexema));
 		if(!sufixVariavel(node)) return false;
 		return true;
 	}
@@ -614,11 +659,11 @@ public class Parser2{
 		Arvore node = newTree("sufix variavel");
 		pai.add(node);
 		if(token.tipo.equals("AP")){
-			addToken(token,node);
+			addToken(token,node, "(");
 			if(!token.tipo.equals("FP")){
 				if(!param(node)) return false;
 			}
-			if(token.tipo.equals("FP")) addToken(token,node);
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
 			else{
 				erro("(sufix variavel) Esperado fechar parenteses");
 				return false;
@@ -631,9 +676,9 @@ public class Parser2{
 		Arvore node = newTree("numeros");
 		pai.add(node);
 		if(token.tipo.equals("OP_ARI_SUBTRACAO")){
-			addToken(token,node);
+			addToken(token,node, "-");
 			if(!sufixNums(node)) return false;
-		} else addToken(token,node);
+		} else addToken(token,node , c.to_decimal(token.lexema));
 		return true;
 	}
 	private boolean sufixNums(Arvore pai){
@@ -641,8 +686,28 @@ public class Parser2{
 		pai.add(node);
 		if(token.tipo.equals("VALOR_INT")
 		|| token.tipo.equals("VALOR_DOUBLE"))
-			addToken(token,node);
+			addToken(token,node, c.to_decimal(token.lexema));
 		else erro("(sufix num) Esperado valor numerico");
 		return true;
+	}
+        
+        private void tradutor(String codigo){
+            System.out.print(codigo);
+        }
+        
+        private void tradutor(Number codigo){
+            System.out.print(codigo);
+        }
+        
+        void addToken( Token t, Arvore pai, String newcode){
+                tradutor(newcode);
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+        
+        void addToken( Token t, Arvore pai, Number newcode){
+                tradutor(newcode);
+		pai.add(new Arvore(t));
+		token = getNextToken();
 	}
 }
