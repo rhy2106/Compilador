@@ -1,7 +1,29 @@
 package Model;
 
+import java.util.HashMap;
+
 public class Conversor{
-	public double to_decimal(String num){
+	HashMap<Character,Character> dicionario;
+
+	public Conversor(){
+		this.dicionario = new HashMap<>();
+		setup_dicionario();
+	}
+
+	public String to_variavel(String lexema){
+		String traducao = "";
+		for(int i = 0; i < lexema.length(); i++){
+			traducao += dicionario.get(lexema.charAt(i));
+		}
+		return traducao;
+	}
+        
+        public String to_str(String lexema){
+            String str = lexema.replace("16", "\"");
+            return str;
+        }
+
+	public Number to_decimal(String num){
 		double pre_virgula = 0;
 		boolean negativo = false;
 		int i = 0;
@@ -21,8 +43,12 @@ public class Conversor{
 			pos_virgula = (pos_virgula + num.charAt(i) - 'A') / 26.0;
 			i--;
 		}
-		double ans = (negativo ? -1.0 : 1.0) * (pre_virgula + pos_virgula); 
-		return ans;
+		double ans = (negativo ? -1.0 : 1.0) * (pre_virgula + pos_virgula);
+                
+                if(ans == Math.floor(ans)){
+                    return (int) ans;
+                }
+                else return ans;
 	}
 	public String to_26(double num){
 		String pre_virgula = "";
@@ -54,5 +80,39 @@ public class Conversor{
 		String ans = (negativo ? "3" : "") + new StringBuilder(pre_virgula).reverse().toString() + pos_virgula;
 		return ans;
 
+	}
+
+	private void setup_dicionario(){
+		dicionario.put('!', 'a');
+		dicionario.put('@', 'b');
+		dicionario.put('#', 'c');
+		dicionario.put('$', 'd');
+		dicionario.put('%', 'e');
+		dicionario.put('&', 'f');
+		dicionario.put('*', 'g');
+		dicionario.put('(', 'h');
+		dicionario.put(')', 'i');
+		dicionario.put('-', 'j');
+		dicionario.put('+', 'k');
+		dicionario.put('/', 'l');
+		dicionario.put('?', 'm');
+		dicionario.put(':', 'n');
+		dicionario.put(';', 'o');
+		dicionario.put('.', 'p');
+		dicionario.put(',', 'q');
+		dicionario.put('>', 'r');
+		dicionario.put('<', 's');
+		dicionario.put('\\','t');
+		dicionario.put('}', 'u');
+		dicionario.put('{', 'v');
+		dicionario.put('[', 'w');
+		dicionario.put(']', 'x');
+		dicionario.put('^', 'y');
+		dicionario.put('~', 'z');
+		dicionario.put('\'','A');
+		dicionario.put('\"','B');
+		dicionario.put(' ', 'C');
+		dicionario.put('=', 'D');
+		dicionario.put('_', 'E');
 	}
 }	
