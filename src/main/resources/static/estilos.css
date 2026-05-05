@@ -62,10 +62,15 @@ button{
 #copy_button{
 	width: 75px;
 	height: 30px;
-	margin: auto;
+	margin-top: auto;
+	margin-bottom: auto;
 	background-color: #363636;
 	border: 1px solid white;
 	color:white;
+}
+
+#copy_button:hover{
+	background-color: #565656;
 }
 
 #arvore, #codigo{
