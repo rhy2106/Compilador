@@ -97,4 +97,13 @@ async function tabela(){
 	}
 }
 
+async function copyCodigo(){
+	var copyText = document.getElementById("codigo");
+	copy.select();
+	copy.selectRange(0,copyText.length);
+
+	navigator.clipboard.writeText(copyText.value);
+	alert("Codigo copiado!");
+}
+
 tabela();
