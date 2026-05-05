@@ -17,7 +17,7 @@ public class Conversor{
 	}
 
 	public String to_variavel(String lexema){
-		String traducao = "";
+		String traducao = "id_";
 		for(int i = 0; i < lexema.length(); i++){
 			traducao += dicionario.get(lexema.charAt(i));
 		}
@@ -96,12 +96,12 @@ public class Conversor{
 	}
 
 	private void setup_tipo(){
-		tipo.put(":-:",".toInt()");
-		tipo.put(";-;",".toDouble()");
-		tipo.put("(/\'-\')/",".toString()");
-		tipo.put("{/\"}/",".first()");
-		tipo.put("^-^",".toBoolean()");
-		tipo.put("'-'","Void");
+		tipo.put(":-:","Int");
+		tipo.put(";-;",".Double");
+		tipo.put("(/\'-\')/","String");
+		tipo.put("{/\"}/",".Character");
+		tipo.put("^-^",".Boolean");
+		tipo.put("'-'","Unit");
 	}
 
 	private void setup_val(){

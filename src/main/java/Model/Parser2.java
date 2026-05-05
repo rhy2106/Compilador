@@ -37,6 +37,7 @@ public class Parser2{
 	}
         
 	public Arvore arvore(){
+
 		boolean fim = false;
 		while(true){
 			if( token == null
@@ -50,6 +51,7 @@ public class Parser2{
 		}
 		if(!token.tipo.equals("EOF")) erro("token apos o fim do programa");
 		else token_print(token,raiz);
+
 
 		return raiz;
 	}
@@ -66,15 +68,11 @@ public class Parser2{
 	}
 
 	private void tradutor(String codigo){
-		System.setOut(saida);
 		System.out.print(codigo);
-		System.setOut(original);
 	}
         
 	private void tradutor(Number codigo){
-		System.setOut(saida);
 		System.out.print(codigo);
-		System.setOut(original);
 	}
 
 	void addToken( Token t, Arvore pai){
@@ -103,19 +101,25 @@ public class Parser2{
 	}
 
 	public boolean parse(){
+		System.setOut(saida);
 		if(!decFuncao(raiz)) return false;
 		if(!token.tipo.equals("EOF")){
 			erro("Token após o fim do programa");
 			return false;
 		} else addToken(token,raiz);
+		System.setOut(original);
 		return true;
 	}
 
 	private boolean decFuncao(Arvore pai){
 		Arvore node = newTree("declarar funcao");
 		pai.add(node);
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
 		if(!tipo(node)) return false;
-		if(!sufixDecFuncao(node)) return false;
+		System.setOut(saida);
+		if(!sufixDecFuncao(node, exp.toString())) return false;
 		return true;
 	}
 
@@ -123,7 +127,7 @@ public class Parser2{
 		Arvore node = newTree("tipo");
 		pai.add(node);
 		if(token.tipo.startsWith("TIPO")){
-			addToken(token,node);
+			addToken(token,node,c.to_tipo(token.lexema));
 			return true;
 		} else{
 			erro("(tipo) Esperado Tipo");
@@ -131,7 +135,7 @@ public class Parser2{
 		}
 	}
 
-	private boolean sufixDecFuncao(Arvore pai){
+	private boolean sufixDecFuncao(Arvore pai, String exp){
 		Arvore node = newTree("sufix declarar funcao");
 		pai.add(node);
 		boolean is_main = false;
@@ -155,7 +159,7 @@ public class Parser2{
 			if(!decParam(node)) return false;
 		}
 
-		if(token.tipo.equals("FP")) addToken(token,node, ")");
+		if(token.tipo.equals("FP")) addToken(token,node, "): " + exp);
 		else{
 			erro("(sufix declarar funcao) Esperado fechar parenteses (19)");
 			return false;
@@ -187,12 +191,18 @@ public class Parser2{
 	private boolean decParam(Arvore pai){
 		Arvore node = newTree("declarar parametros");
 		pai.add(node);
+		
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
 		if(!tipo(node)) return false;
+		System.setOut(saida);
 		if(token.tipo.equals("VALOR_ID")) addToken(token,node, c.to_variavel(token.lexema));
 		else{
 			erro("(declarar param) Esperado nome do Parametro");
 			return false;
 		}
+		tradutor(": " + exp.toString());
 
 		if(!sufixDecParam(node)) return false;
 		return true;
@@ -260,8 +270,11 @@ public class Parser2{
 		addToken(token,node);
 		String mapa_id = token.lexema;
 		if(token.tipo.equals("VALOR_ID")){
+			String sufixo = "";
 			if(mapa.get(mapa_id) == "Void") erro("(cmd input) Tentando dar valor para uma variavel void");
-			addToken(token,node, c.to_variavel(token.lexema) + " = readln()" + mapa.get(mapa_id));
+			else if(mapa.get(mapa_id) == "Character") sufixo = ".first";
+			else sufixo = ".to" + mapa.get(mapa_id);
+			addToken(token,node, c.to_variavel(token.lexema) + " = readln()" + sufixo + "()");
 		}
 		else{
 			erro("(cmd input) Esperado variavel");
@@ -371,11 +384,18 @@ public class Parser2{
 		Arvore node = newTree("declaracao");
 		pai.add(node);
 		String mapa_tipo = token.lexema;
+
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
 		if(!tipo(node)) return false;
+		System.setOut(saida);
+
 		String mapa_id = token.lexema;
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node, "var " + c.to_variavel(token.lexema));
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, "var " + c.to_variavel(token.lexema) + ": " + exp.toString());
 		else erro("(declaracao) Esperado nome da variavel");
 		mapa.put(mapa_id, c.to_tipo(mapa_tipo));
+
 		if(token.tipo.equals("OP_ATR")){
 			addToken(token,node, " = ");
 			if(!calculo(node)) return false;
@@ -528,9 +548,10 @@ public class Parser2{
 	private boolean cmdFor(Arvore pai){
 		Arvore node = newTree("for");
 		pai.add(node);
-		addToken(token,node, "for");
+		// addToken(token,node, "for");
+		addToken(token,node,"run {\n");
 
-		if(token.tipo.equals("AP")) addToken(token,node, "(");
+		if(token.tipo.equals("AP")) addToken(token,node, "");
 		else{
 			erro("(cmd for) Esperado abrir parenteses (18)");
 			return false;
@@ -538,27 +559,34 @@ public class Parser2{
 
 		if(!declaracao(node)) return false;
 
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, "; ");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd for) Esperado fim linha");
 			return false;
 		}
 
+		tradutor("while(");
 		if(!condicao(node)) return false;
 
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, "; ");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ")");
 		else{
 			erro("(cmd for) Esperado fim linha");
 			return false;
 		}
 
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
+		// exp
 		if(!expressao(node)) return false;
 		
-		if(token.tipo.equals("FP")) addToken(token,node, ")");
+		if(token.tipo.equals("FP")) addToken(token,node, ";\n");
 		else{
 			erro("(cmd for) Esperado fechar parenteses (19)");
 			return false;
 		}
+		//exp
+		System.setOut(saida);
 
 		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
@@ -568,11 +596,14 @@ public class Parser2{
 
 		if(!bloco(node)) return false;
 
+		tradutor(exp.toString()); // exp
+
 		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
 		else{
 			erro("(cmd for) Esperado fechar Chaves");
 			return false;
 		}
+		tradutor("}\n");
 		return true;
 	}
 
@@ -657,12 +688,12 @@ public class Parser2{
 		pai.add(node);
 		if(token.tipo.startsWith("OP_ARI")){
 			if(token.tipo.endsWith("SOMA")) addToken(token,node, " + ");
-                        else if(token.tipo.endsWith("SUBTRACAO")) addToken(token,node, " - ");
-                        else if(token.tipo.endsWith("MULTIPLICACAO")) addToken(token,node, " * ");
-                        else if(token.tipo.endsWith("DIVISAO")) addToken(token,node, " / ");
-                        else if(token.tipo.endsWith("MODULO")) addToken(token,node, " % ");
+			else if(token.tipo.endsWith("SUBTRACAO")) addToken(token,node, " - ");
+			else if(token.tipo.endsWith("MULTIPLICACAO")) addToken(token,node, " * ");
+			else if(token.tipo.endsWith("DIVISAO")) addToken(token,node, " / ");
+			else if(token.tipo.endsWith("MODULO")) addToken(token,node, " % ");
                         
-                        if(!calculo(node)) return false;
+			if(!calculo(node)) return false;
 		}
 		return true;
 	}
