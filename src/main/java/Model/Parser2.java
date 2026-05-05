@@ -1,13 +1,18 @@
 package Model;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.HashMap;
 
 public class Parser2{
 	List<Token> tokens;
+	HashMap<String,String> mapa = new HashMap<>();
 	Token token;
 	Arvore raiz;
-        Conversor c = new Conversor();
-        
-        boolean is_main;
+	Conversor c = new Conversor();
+	PrintStream original = System.out;
+	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	PrintStream saida = new PrintStream(baos);
 
 	public Parser2(List<Token> tokens){
 		this.tokens = tokens;
@@ -31,7 +36,7 @@ public class Parser2{
 			);
 	}
         
-        public Arvore arvore(){
+	public Arvore arvore(){
 		boolean fim = false;
 		while(true){
 			if( token == null
@@ -49,7 +54,10 @@ public class Parser2{
 		return raiz;
 	}
         
-        void token_print( Token t, Arvore pai){
+	public String codigo(){
+		return baos.toString();
+	}
+	void token_print( Token t, Arvore pai){
 		pai.add(new Arvore(t));
 	}
 
@@ -57,7 +65,31 @@ public class Parser2{
 		return new Arvore(s);
 	}
 
+	private void tradutor(String codigo){
+		System.setOut(saida);
+		System.out.print(codigo);
+		System.setOut(original);
+	}
+        
+	private void tradutor(Number codigo){
+		System.setOut(saida);
+		System.out.print(codigo);
+		System.setOut(original);
+	}
+
 	void addToken( Token t, Arvore pai){
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+        
+	void addToken( Token t, Arvore pai, String newcode){
+		tradutor(newcode);
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+        
+	void addToken( Token t, Arvore pai, Number newcode){
+		tradutor(newcode);
 		pai.add(new Arvore(t));
 		token = getNextToken();
 	}
@@ -102,7 +134,7 @@ public class Parser2{
 	private boolean sufixDecFuncao(Arvore pai){
 		Arvore node = newTree("sufix declarar funcao");
 		pai.add(node);
-		is_main = false;
+		boolean is_main = false;
 		if(token.tipo.equals("VALOR_ID")){ 
                     addToken(token,node, "fun " + c.to_variavel(token.lexema));
                     }else if(token.tipo.equals("MAIN")){
@@ -226,7 +258,11 @@ public class Parser2{
 		Arvore node = newTree("cmd input");
 		pai.add(node);
 		addToken(token,node);
-		if(token.tipo.equals("VALOR_ID")) addToken(token,node, c.to_variavel(token.lexema) + " = readln()");
+		String mapa_id = token.lexema;
+		if(token.tipo.equals("VALOR_ID")){
+			if(mapa.get(mapa_id) == "Void") erro("(cmd input) Tentando dar valor para uma variavel void");
+			addToken(token,node, c.to_variavel(token.lexema) + " = readln()" + mapa.get(mapa_id));
+		}
 		else{
 			erro("(cmd input) Esperado variavel");
 			return false;
@@ -242,8 +278,7 @@ public class Parser2{
 	private boolean cmdReturn(Arvore pai){
 		Arvore node = newTree("cmd return");
 		pai.add(node);
-                if(is_main == true) addToken(token,node, "//");
-                else if(is_main == false) addToken(token,node, "return ");
+		addToken(token,node, "return ");
                 
 		if(!token.tipo.equals("FIM_LINHA")){
 			if(!valor(node)) return false;
@@ -259,8 +294,8 @@ public class Parser2{
 	private boolean cmdBreak(Arvore pai){
 		Arvore node = newTree("cmd break");
 		pai.add(node);
-		addToken(token,node);
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		addToken(token,node,"break");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node,";\n");
 		else{
 			erro("(cmd break) Esperado fim de linha");
 			return false;
@@ -271,8 +306,8 @@ public class Parser2{
 	private boolean cmdContinue(Arvore pai){
 		Arvore node = newTree("cmd continue");
 		pai.add(node);
-		addToken(token,node);
-		if(token.tipo.equals("FIM_LINHA")) addToken(token,node);
+		addToken(token,node,"continue");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node,";\n");
 		else{
 			erro("(cmd continue) Esperado fim de linha");
 			return false;
@@ -335,13 +370,18 @@ public class Parser2{
 	private boolean declaracao(Arvore pai){
 		Arvore node = newTree("declaracao");
 		pai.add(node);
+		String mapa_tipo = token.lexema;
 		if(!tipo(node)) return false;
+		String mapa_id = token.lexema;
 		if(token.tipo.equals("VALOR_ID")) addToken(token,node, "var " + c.to_variavel(token.lexema));
 		else erro("(declaracao) Esperado nome da variavel");
+		mapa.put(mapa_id, c.to_tipo(mapa_tipo));
 		if(token.tipo.equals("OP_ATR")){
 			addToken(token,node, " = ");
 			if(!calculo(node)) return false;
-		} 
+		} else{
+			tradutor(" = " + c.to_val(mapa_tipo));
+		}
 		return true;
 	}
 
@@ -568,14 +608,13 @@ public class Parser2{
 			if(!calculo(node)) return false;
 
 			if(token.tipo.startsWith("OP_REL")){
-                            if(token.tipo.endsWith("MAIOR")) addToken(token,node, " > ");
-                            else if(token.tipo.endsWith("MENOR")) addToken(token,node, " < ");
-                            else if(token.tipo.endsWith("DIFF")) addToken(token,node, " != ");
-                            else if(token.tipo.endsWith("IGUAL")) addToken(token,node, " == ");
-                            else if(token.tipo.endsWith("MAIOR_IGUAL")) addToken(token,node, " >= ");
-                            else if(token.tipo.endsWith("MENOR_IGUAL")) addToken(token,node, " <= ");
-                        }
-			else{
+				if(token.tipo.endsWith("MAIOR")) addToken(token,node, " > ");
+				else if(token.tipo.endsWith("MENOR")) addToken(token,node, " < ");
+				else if(token.tipo.endsWith("DIFF")) addToken(token,node, " != ");
+				else if(token.tipo.endsWith("MAIOR_IGUAL")) addToken(token,node, " >= ");
+				else if(token.tipo.endsWith("MENOR_IGUAL")) addToken(token,node, " <= ");
+				else if(token.tipo.endsWith("IGUAL")) addToken(token,node, " == ");
+			} else{
 				erro("(condicao) Esperado Operador relacional");
 				return false;
 			}
@@ -591,8 +630,8 @@ public class Parser2{
 		pai.add(node);
 		if(token.tipo.startsWith("OP_LOG")){
 			if(token.tipo.endsWith("AND")) addToken(token,node, " && ");
-                        else if(token.tipo.endsWith("OR")) addToken(token,node, " || ");
-                        else if(!condicao(node)) return false;
+			else if(token.tipo.endsWith("OR")) addToken(token,node, " || ");
+			if(!condicao(node)) return false;
 		}
 		return true;
 	}
@@ -691,23 +730,4 @@ public class Parser2{
 		return true;
 	}
         
-        private void tradutor(String codigo){
-            System.out.print(codigo);
-        }
-        
-        private void tradutor(Number codigo){
-            System.out.print(codigo);
-        }
-        
-        void addToken( Token t, Arvore pai, String newcode){
-                tradutor(newcode);
-		pai.add(new Arvore(t));
-		token = getNextToken();
-	}
-        
-        void addToken( Token t, Arvore pai, Number newcode){
-                tradutor(newcode);
-		pai.add(new Arvore(t));
-		token = getNextToken();
-	}
 }
