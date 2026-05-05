@@ -48,12 +48,15 @@ public class Controller extends Exception{
 			Arvore arvore = parser.getTree();
 			arvore.print();
 			String result = arvore.arvore();
+			String result2 = parser.codigo();
+			System.out.println("resultado2");
+			System.out.println(result2);
 
 			System.out.println(response);
 
 			response.put("success",true);
 			response.put("arvore",result);
-			response.put("codigo","");
+			response.put("codigo",result2);
 			return response;
 
 		}catch(Exception e){

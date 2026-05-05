@@ -4,10 +4,16 @@ import java.util.HashMap;
 
 public class Conversor{
 	HashMap<Character,Character> dicionario;
+	HashMap<String,String> tipo;
+	HashMap<String,String> val;
 
 	public Conversor(){
 		this.dicionario = new HashMap<>();
+		this.tipo = new HashMap<>();
+		this.val = new HashMap<>();
 		setup_dicionario();
+		setup_tipo();
+		setup_val();
 	}
 
 	public String to_variavel(String lexema){
@@ -18,10 +24,18 @@ public class Conversor{
 		return traducao;
 	}
         
-        public String to_str(String lexema){
-            String str = lexema.replace("16", "\"");
-            return str;
-        }
+	public String to_str(String lexema){
+		String str = lexema.replace("16", "\"");
+		return str;
+	}
+
+	public String to_tipo(String lexema){
+		return tipo.get(lexema);
+	}
+
+	public String to_val(String lexema){
+		return val.get(lexema);
+	}
 
 	public Number to_decimal(String num){
 		double pre_virgula = 0;
@@ -44,11 +58,10 @@ public class Conversor{
 			i--;
 		}
 		double ans = (negativo ? -1.0 : 1.0) * (pre_virgula + pos_virgula);
-                
-                if(ans == Math.floor(ans)){
-                    return (int) ans;
-                }
-                else return ans;
+
+		if(num.charAt(num.length()-1)  >= 'a' && num.charAt(num.length()-1)  <= 'z')
+			return (int) ans;
+		else return ans;
 	}
 	public String to_26(double num){
 		String pre_virgula = "";
@@ -80,6 +93,24 @@ public class Conversor{
 		String ans = (negativo ? "3" : "") + new StringBuilder(pre_virgula).reverse().toString() + pos_virgula;
 		return ans;
 
+	}
+
+	private void setup_tipo(){
+		tipo.put(":-:",".toInt()");
+		tipo.put(";-;",".toDouble()");
+		tipo.put("(/\'-\')/",".toString()");
+		tipo.put("{/\"}/",".first()");
+		tipo.put("^-^",".toBoolean()");
+		tipo.put("'-'","Void");
+	}
+
+	private void setup_val(){
+		val.put(":-:","0");
+		val.put(";-;","0.0");
+		val.put("(/\'-\')/","\"\"");
+		val.put("{/\"}/","\'a\'");
+		val.put("^-^","false");
+		val.put("'-'","Void");
 	}
 
 	private void setup_dicionario(){
