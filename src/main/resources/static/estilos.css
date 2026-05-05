@@ -52,6 +52,22 @@ button{
 	width: 200px;
 	height: 50px;
 }
+
+.title{
+	display: flex;
+	flex-direction:row;
+	justify-content:space-around;
+}
+
+#copy_button{
+	width: 75px;
+	height: 30px;
+	margin: auto;
+	background-color: #363636;
+	border: 1px solid white;
+	color:white;
+}
+
 #arvore, #codigo{
 	text-align: left;
 	height:380px;
