@@ -97,9 +97,9 @@ public class Conversor{
 
 	private void setup_tipo(){
 		tipo.put(":-:","Int");
-		tipo.put(";-;",".Double");
+		tipo.put(";-;","Double");
 		tipo.put("(/\'-\')/","String");
-		tipo.put("{/\"}/",".Character");
+		tipo.put("{/\"}/","Character");
 		tipo.put("^-^",".Boolean");
 		tipo.put("'-'","Unit");
 	}
