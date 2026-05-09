@@ -104,6 +104,7 @@ public class Parser2{
 
 	public boolean parse(){
 		System.setOut(saida);
+		tradutor("import java.util.Scanner;\nval sc = Scanner(System.`in`);\n");
 		if(!decFuncao(raiz)) return false;
 		if(!token.tipo.equals("EOF")){
 			erro("Token após o fim do programa");
@@ -274,9 +275,10 @@ public class Parser2{
 		if(token.tipo.equals("VALOR_ID")){
 			String sufixo = "";
 			if(mapa.get(mapa_id) == "Void") erro("(cmd input) Tentando dar valor para uma variavel void");
-			else if(mapa.get(mapa_id) == "Character") sufixo = ".first";
-			else sufixo = ".to" + mapa.get(mapa_id);
-			addToken(token,node, c.to_variavel(token.lexema) + " = readln()" + sufixo + "()");
+			else if(mapa.get(mapa_id) == "Char") sufixo = "()[0]";
+			else if(mapa.get(mapa_id) == "String") sufixo = "()";
+			else sufixo = mapa.get(mapa_id) + "()";
+			addToken(token,node, c.to_variavel(token.lexema) + " = sc.next" + sufixo);
 		}
 		else{
 			erro("(cmd input) Esperado variavel");
