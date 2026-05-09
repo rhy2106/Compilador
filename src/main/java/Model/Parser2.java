@@ -3,10 +3,12 @@ import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Stack;
 
 public class Parser2{
 	List<Token> tokens;
 	HashMap<String,String> mapa = new HashMap<>();
+	Stack<String> forIncrease = new Stack<>();
 	Token token;
 	Arvore raiz;
 	Conversor c = new Conversor();
@@ -102,6 +104,7 @@ public class Parser2{
 
 	public boolean parse(){
 		System.setOut(saida);
+		tradutor("import java.util.Scanner;\nval sc = Scanner(System.`in`);\n");
 		if(!decFuncao(raiz)) return false;
 		if(!token.tipo.equals("EOF")){
 			erro("Token após o fim do programa");
@@ -272,9 +275,10 @@ public class Parser2{
 		if(token.tipo.equals("VALOR_ID")){
 			String sufixo = "";
 			if(mapa.get(mapa_id) == "Void") erro("(cmd input) Tentando dar valor para uma variavel void");
-			else if(mapa.get(mapa_id) == "Character") sufixo = ".first";
-			else sufixo = ".to" + mapa.get(mapa_id);
-			addToken(token,node, c.to_variavel(token.lexema) + " = readln()" + sufixo + "()");
+			else if(mapa.get(mapa_id) == "Char") sufixo = "()[0]";
+			else if(mapa.get(mapa_id) == "String") sufixo = "()";
+			else sufixo = mapa.get(mapa_id) + "()";
+			addToken(token,node, c.to_variavel(token.lexema) + " = sc.next" + sufixo);
 		}
 		else{
 			erro("(cmd input) Esperado variavel");
@@ -319,6 +323,7 @@ public class Parser2{
 	private boolean cmdContinue(Arvore pai){
 		Arvore node = newTree("cmd continue");
 		pai.add(node);
+		tradutor(forIncrease.peek());
 		addToken(token,node,"continue");
 		if(token.tipo.equals("FIM_LINHA")) addToken(token,node,";\n");
 		else{
@@ -515,6 +520,8 @@ public class Parser2{
 		pai.add(node);
 		addToken(token,node, "while");
 
+		forIncrease.push("");
+
 		if(token.tipo.equals("AP")) addToken(token,node, "(");
 		else{
 			erro("(cmd while) Esperado abrir parenteses (18)");
@@ -542,6 +549,9 @@ public class Parser2{
 			erro("(cmd while) Esperado fechar Chaves");
 			return false;
 		}
+
+		forIncrease.pop();
+
 		return true;
 	}
 
@@ -586,7 +596,10 @@ public class Parser2{
 			return false;
 		}
 		//exp
+
 		System.setOut(saida);
+
+		forIncrease.push(exp.toString());
 
 		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
 		else{
@@ -603,7 +616,11 @@ public class Parser2{
 			erro("(cmd for) Esperado fechar Chaves");
 			return false;
 		}
+
 		tradutor("}\n");
+
+		forIncrease.pop();
+
 		return true;
 	}
 

@@ -99,8 +99,8 @@ public class Conversor{
 		tipo.put(":-:","Int");
 		tipo.put(";-;","Double");
 		tipo.put("(/\'-\')/","String");
-		tipo.put("{/\"}/","Character");
-		tipo.put("^-^",".Boolean");
+		tipo.put("{/\"}/","Char");
+		tipo.put("^-^","Boolean");
 		tipo.put("'-'","Unit");
 	}
 
