@@ -156,6 +156,8 @@ export function general(tecla){
 	else if(vim.cmd == '0') cmc_linha();
 	else if(vim.cmd == 's') substituir();
 	else if(vim.cmd == 'x') excluir();
+	else if(vim.cmd == 'u') vim.undo();
+	else if(vim.cmd == 'r') vim.redo();
 	else if(vim.cmd == 'p') paste(1);
 	else if(vim.cmd == 'P') paste(-1);
 	else if(vim.cmd.length > 2) vim.cmd = "";

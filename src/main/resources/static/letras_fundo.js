@@ -64,7 +64,6 @@ function criarLetras() {
 textarea.addEventListener("input", criarLetras);
 
 function animar() {
-	console.log('a');
 	palavras.forEach(palavra => {
 
 		const w = palavra.el.offsetWidth;
@@ -89,7 +88,12 @@ animar();
 criarLetras();
 
 const observer = new ResizeObserver(entries => {
-	fundo.style.height = document.body.offsetHeight + "px";
+	fundo.style.height = Math.max(window.innerHeight, document.body.offsetHeight) + "px";
 });
+
+function boost(){
+	if(fundo.classList.contains("naovisivel")) fundo.classList.remove("naovisivel");
+	else fundo.classList.add("naovisivel");
+}
 
 observer.observe(document.body);

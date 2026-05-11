@@ -10,6 +10,31 @@ class Vim{
 		this.visual_anchor2 = 0;
 		this.visual_cursor = 0;
 		this.yank = "";
+
+		this.antes = [];
+		this.agora = this.editor.value;
+		this.depois = [];
+	}
+
+	undo(){
+		this.cmd = "";
+		if(this.antes.length == 0) return;
+		this.depois.push(this.pos());
+		this.depois.push(this.agora);
+		this.agora = this.antes.pop();
+		this.editor.value = this.agora;
+		this.set_pos(this.antes.pop());
+	}
+
+	redo(){
+		this.cmd = "";
+		if(this.depois.length == 0) return;
+		this.antes.push(this.pos());
+		this.antes.push(this.agora);
+		this.agora = this.depois.pop();
+		this.editor.value = this.agora;
+		this.set_pos(this.depois.pop());
+
 	}
 
 	pos(){
@@ -61,7 +86,13 @@ class Vim{
 			this.visual_cursor = this.pos();
 			this.set_sel(this.visual_anchor,this.visual_anchor2);
 		}
-		if(this.mode == "general") this.set_pos(this.pos());
+		if(this.mode == "general"){
+			this.antes.push(this.pos());
+			this.antes.push(this.agora);
+			if(this.agora != this.editor.value) this.depois = []
+			this.agora = this.editor.value;
+			this.set_pos(this.pos());
+		}
 		console.log(this.mode);
 	}
 }
