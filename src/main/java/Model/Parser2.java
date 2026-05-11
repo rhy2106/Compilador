@@ -647,7 +647,10 @@ public class Parser2{
 		Arvore node = newTree("condicao");
 		pai.add(node);
 
-		if(token.tipo.equals("AP")){
+		if(token.tipo.startsWith("BOOL_")){
+			if(token.tipo.endsWith("TRUE")) addToken(token,node,"true");
+			else if(token.tipo.endsWith("FALSE")) addToken(token,node,"false");
+		} else if(token.tipo.equals("AP")){
 			addToken(token,node, "(");
 			if(!condicao(node)) return false;
 			if(token.tipo.equals("FP")) addToken(token,node, ")");
@@ -728,8 +731,10 @@ public class Parser2{
 			if(!variavel(node)) return false;
 		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
 		else if(token.tipo.equals("VALOR_CHAR")) addToken(token,node);
-		else if(token.tipo.equals("VALOR_BOOL")) addToken(token,node);
-		else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
+		else if(token.tipo.startsWith("BOOL_")){
+			if(token.tipo.endsWith("TRUE")) addToken(token,node,"true");
+			else if(token.tipo.endsWith("FALSE")) addToken(token,node,"false");
+		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
 		else erro("(valor) Esperado valor");
 		return true;
 	}
