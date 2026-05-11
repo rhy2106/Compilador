@@ -1,18 +1,30 @@
 package Model;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Stack;
 
 public class Parser{
 	List<Token> tokens;
+	HashMap<String,String> mapa = new HashMap<>();
+	Stack<String> forIncrease = new Stack<>();
 	Token token;
+	Arvore raiz;
+	Conversor c = new Conversor();
+	PrintStream original = System.out;
+	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	PrintStream saida = new PrintStream(baos);
 
 	public Parser(List<Token> tokens){
 		this.tokens = tokens;
+		raiz = newTree("PROG");
+		token = getNextToken();
 	}
 
 	public Token getNextToken(){
 		if(tokens.size() > 0)
 			return tokens.remove(0);
-		erro("EOF nao esperado");
 		return null;
 	}
 
@@ -25,26 +37,30 @@ public class Parser{
 			"\n====================================================="
 			);
 	}
-
+        
 	public Arvore arvore(){
-		Arvore node = new Arvore("PROG");
+
 		boolean fim = false;
 		while(true){
 			if( token == null
 			|| token.tipo.equals("ACHA")
 			|| token.tipo.equals("FCHA")
 			|| token.tipo.equals("FIM_LINHA")) token = getNextToken();
-			if(token.tipo.startsWith("TIPO")) fim = declarar_funcao(node);
+			if(token.tipo.startsWith("TIPO")) fim = decFuncao(raiz);
 			else if(token.tipo.equals("EOF")) break;
 			else erro("esperado tipo");
 			if(fim) break;
 		}
 		if(!token.tipo.equals("EOF")) erro("token apos o fim do programa");
-		else token_print(token,node);
+		else token_print(token,raiz);
 
-		return node;
+
+		return raiz;
 	}
-
+        
+	public String codigo(){
+		return baos.toString();
+	}
 	void token_print( Token t, Arvore pai){
 		pai.add(new Arvore(t));
 	}
@@ -53,522 +69,718 @@ public class Parser{
 		return new Arvore(s);
 	}
 
-	boolean tipo( Arvore pai){
-		if(token.tipo.startsWith("TIPO")){
-			Arvore node = token_print("tipo");
-			pai.add(node);
-			token_print(token,node);
-			return true;
-		}
-		return false;
+	private void tradutor(String codigo){
+		System.out.print(codigo);
+	}
+        
+	private void tradutor(Number codigo){
+		System.out.print(codigo);
 	}
 
-	boolean declarar_funcao( Arvore pai){
-		Arvore node = token_print("declarar_funcao");
+	void addToken( Token t, Arvore pai){
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+        
+	void addToken( Token t, Arvore pai, String newcode){
+		tradutor(newcode);
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+        
+	void addToken( Token t, Arvore pai, Number newcode){
+		tradutor(newcode);
+		pai.add(new Arvore(t));
+		token = getNextToken();
+	}
+
+	Arvore newTree(String s){
+		return new Arvore(s);
+	}
+
+	public Arvore getTree(){
+		return raiz;
+	}
+
+	public boolean parse(){
+		System.setOut(saida);
+		tradutor("import java.util.Scanner;\nval sc = Scanner(System.`in`);\n");
+		if(!decFuncao(raiz)) return false;
+		if(!token.tipo.equals("EOF")){
+			erro("Token após o fim do programa");
+			return false;
+		} else addToken(token,raiz);
+		System.setOut(original);
+		return true;
+	}
+
+	private boolean decFuncao(Arvore pai){
+		Arvore node = newTree("declarar funcao");
+		pai.add(node);
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
+		if(!tipo(node)) return false;
+		System.setOut(saida);
+		if(!sufixDecFuncao(node, exp.toString())) return false;
+		return true;
+	}
+
+	private boolean tipo(Arvore pai){
+		Arvore node = newTree("tipo");
+		pai.add(node);
+		if(token.tipo.startsWith("TIPO")){
+			addToken(token,node,c.to_tipo(token.lexema));
+			return true;
+		} else{
+			erro("(tipo) Esperado Tipo");
+			return false;
+		}
+	}
+
+	private boolean sufixDecFuncao(Arvore pai, String exp){
+		Arvore node = newTree("sufix declarar funcao");
 		pai.add(node);
 		boolean is_main = false;
-		boolean has_return = false;
-		token_print(token,node);
-		token = getNextToken();
-		if(token.tipo.equals("MAIN")){
-			token_print(token,node);
+		if(token.tipo.equals("VALOR_ID")){ 
+                    addToken(token,node, "fun " + c.to_variavel(token.lexema));
+                    }else if(token.tipo.equals("MAIN")){
+			addToken(token,node, "fun main");
 			is_main = true;
-		}
-		else if(token.tipo.equals("VALOR_ID")) token_print(token,node);
-		else erro("esperado nome da função");
-
-		token = getNextToken();
-		if(token.tipo.equals("AP")) token_print(token,node);
-		else erro("Esperado 18");
-
-		declarar_parametros(node);
-
-		if(token.tipo.equals("FP")) token_print(token,node);
-		else erro("Esperado 19");
-
-		token = getNextToken();
-		if(token.tipo.equals("ACHA")) token_print(token,node);
-		else erro("Esperado 23");
-
-		has_return = bloco(node);
-
-		if(!has_return) erro("Esperado <=");
-
-		if(token.tipo.equals("FCHA")) token_print(token,node);
-		else erro("Esperado 24");
-
-		if(is_main) token = getNextToken();
-		return is_main;
-	}
-
-	void declarar_parametros( Arvore pai){
-		Arvore node = token_print("declarar_parametros");
-		pai.add(node);
-
-		token = getNextToken();
-		if(tipo(node)){
-			token = getNextToken();
-			if(token.tipo.equals("VALOR_ID")) token_print(token,node);
-			else erro("esperado nome da variavel");
-		} else return;
-
-		while(true){
-			token = getNextToken();
-			if(token.tipo.equals("VIRGULA")){
-				token_print(token,node);
-
-				token = getNextToken();
-				tipo(node);
-
-				token = getNextToken();
-				if(token.tipo.equals("VALOR_ID")) token_print(token,node);
-				else erro("esperado nome da variavel");
-			} else break;
-		}
-	}
-
-	boolean bloco( Arvore pai){
-		Arvore node = token_print("bloco");
-		pai.add(node);
-		boolean end_with_return = false;
-		while(true){
-			Arvore filho = token_print("cmd");
-			node.add(filho);
-			if(token.tipo.equals("ACHA")
-			|| token.tipo.equals("FIM_LINHA"))
-				token = getNextToken();
-			if(token.tipo.equals("PRINT")) cmd_print(filho);
-			else if(token.tipo.equals("INPUT")) cmd_input(filho);
-			else if(token.tipo.equals("IF")) cmd_if(filho);
-			else if(token.tipo.equals("FOR")) cmd_for(filho);
-			else if(token.tipo.equals("WHILE")) cmd_while(filho);
-			else if(token.tipo.startsWith("TIPO")) cmd_declarar(filho);
-			else if(token.tipo.equals("VALOR_ID")) cmd_expressao(filho);
-			else if(token.tipo.equals("BREAK")) cmd_break(filho);
-			else if(token.tipo.equals("CONTINUE")) cmd_continue(filho);
-			else if(token.tipo.equals("RETURN")){
-				cmd_return(filho);
-				end_with_return = true;
-				continue;
-			}
-			else break;
-			end_with_return = false;
-		}
-		return end_with_return;
-	}
-
-	void cmd_return( Arvore pai){
-		Arvore node = token_print("return");
-		pai.add(node);
-		token_print(token,node);
-
-		token = getNextToken();
-		if(token.tipo.startsWith("VALOR")){
-			token_print(token,node);
-			token = getNextToken();
-			if(token.tipo.startsWith("OP_ARI")){
-				token_print(token,node);
-				token = getNextToken();
-				calculo(node);
-			}
+		} else{
+			erro("(sufix declarar funcao) Esperado Nome da Funcao");
+			return false;
 		}
 
-		if(token.tipo.equals("FIM_LINHA")) token_print( token,node);
-		else erro("fim da linha");
-	}
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
+		else{
+			erro("(sufix declarar funcao) Esperado abrir parenteses (18)");
+			return false;
+		}
 
-	void cmd_print( Arvore pai){
-		Arvore node = token_print("print");
-		pai.add(node);
-		token_print( token,node);
+		if(!token.tipo.equals("FP")){
+			if(!decParam(node)) return false;
+		}
 
-		token = getNextToken();
-		valor(node);
+		if(token.tipo.equals("FP")) addToken(token,node, "): " + exp);
+		else{
+			erro("(sufix declarar funcao) Esperado fechar parenteses (19)");
+			return false;
+		}
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(sufix declarar funcao) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(sufix declarar funcao) Esperado fechar Chaves");
+			return false;
+		}
 		
-		if(token.tipo.equals("FIM_LINHA")) token_print( token,node);
-		else erro("fim da linha");
-	}
-
-	void cmd_input( Arvore pai){
-		Arvore node = token_print("input");
-		pai.add(node);
-		token_print( token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("VALOR_ID")) token_print(token,node);
-		else erro("esperado nome da variavel");
-		
-		token = getNextToken();
-		if(token.tipo.equals("FIM_LINHA")) token_print( token,node);
-		else erro("fim da linha");
-	}
-
-	void cmd_if( Arvore pai){
-		Arvore node = token_print("if");
-		pai.add(node);
-		token_print( token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("AP")) token_print(token,node);
-		else erro("Esperado 18");
-
-		token = getNextToken();
-		condicao(node);
-
-		if(token.tipo.equals("FP")) token_print(token,node);
-		else erro("Esperado 19");
-
-		token = getNextToken();
-		if(token.tipo.equals("ACHA")) token_print(token,node);
-		else erro("Esperado 23");
-
-		bloco(node);
-
-		if(token.tipo.equals("FCHA")) token_print(token,node);
-		else erro("Esperado 24");
-
-		cmd_elseif(node);
-	}
-
-	void cmd_elseif( Arvore pai){
-		while(true){
-			token = getNextToken();
-			if(token.tipo.equals("ELSEIF")){
-				Arvore node = token_print("elseif");
-				pai.add(node);
-				token_print( token,node);
-
-				token = getNextToken();
-				if(token.tipo.equals("AP")) token_print(token,node);
-				else erro("Esperado 18");
-
-				token = getNextToken();
-				condicao(node);
-
-				if(token.tipo.equals("FP")) token_print(token,node);
-				else erro("Esperado 19");
-
-				token = getNextToken();
-				if(token.tipo.equals("ACHA")) token_print(token,node);
-				else erro("Esperado 23");
-
-				bloco(node);
-
-				if(token.tipo.equals("FCHA")) token_print(token,node);
-				else erro("Esperado 24");
-			} else if(token.tipo.equals("ELSE")){
-				Arvore node = token_print("else");
-				pai.add(node);
-				token_print( token,node);
-
-				token = getNextToken();
-				if(token.tipo.equals("ACHA")) token_print(token,node);
-				else erro("Esperado 23");
-
-				bloco(node);
-
-				if(token.tipo.equals("FCHA")) token_print(token,node);
-				else erro("Esperado 24");
-			} else break;
+		if(!is_main){
+			if(!decFuncao(node)) return false;
+		} else if(!token.tipo.equals("EOF")){
+			erro("(sufix declarar funcao) Codigo apos o fim do programa");
+			return false;
 		}
-
+		return true;
 	}
 
-	void cmd_for( Arvore pai){
-		Arvore node = token_print("for");
+	private boolean decParam(Arvore pai){
+		Arvore node = newTree("declarar parametros");
 		pai.add(node);
-		token_print(token,node);
+		
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
+		if(!tipo(node)) return false;
+		System.setOut(saida);
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, c.to_variavel(token.lexema));
+		else{
+			erro("(declarar param) Esperado nome do Parametro");
+			return false;
+		}
+		tradutor(": " + exp.toString());
 
-		token = getNextToken();
-		if(token.tipo.equals("AP")) token_print(token,node);
-		else erro("Esperado 18");
-
-		expressao(node);
-
-		if(token.tipo.equals("FIM_LINHA")) token_print( token,node);
-		else erro("fim da linha");
-
-		token = getNextToken();
-		condicao(node);
-
-		if(token.tipo.equals("FIM_LINHA")) token_print( token,node);
-		else erro("fim da linha");
-
-		expressao(node);
-
-		if(token.tipo.equals("FP")) token_print(token,node);
-		else erro("Esperado 19");
-
-		token = getNextToken();
-		if(token.tipo.equals("ACHA")) token_print(token,node);
-		else erro("Esperado 23");
-
-		bloco(node);
-
-		if(token.tipo.equals("FCHA")) token_print(token,node);
-		else erro("Esperado 24");
-		token = getNextToken();
+		if(!sufixDecParam(node)) return false;
+		return true;
+	}
+	private boolean sufixDecParam(Arvore pai){
+		Arvore node = newTree("sufix declarar parametros");
+		pai.add(node);
+		if(token.tipo.equals("VIRGULA")){
+			addToken(token,node, ", ");
+			if(!decParam(node)) return false;
+		}
+		return true;
 	}
 
-	void cmd_while( Arvore pai){
-		Arvore node = token_print("while");
+	private boolean bloco(Arvore pai){
+		Arvore node = newTree("bloco");
 		pai.add(node);
-		token_print(token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("AP")) token_print(token,node);
-		else erro("Esperado 18");
-
-		token = getNextToken();
-		condicao(node);
-
-		if(token.tipo.equals("FP")) token_print(token,node);
-		else erro("Esperado 19");
-
-		token = getNextToken();
-		if(token.tipo.equals("ACHA")) token_print(token,node);
-		else erro("Esperado 23");
-
-		bloco(node);
-
-		if(token.tipo.equals("FCHA")) token_print(token,node);
-		else erro("Esperado 24");
-		token = getNextToken();
+		while(token != null && !token.tipo.equals("FCHA")){
+			if(token.tipo.equals("PRINT")){
+				if(!cmdPrint(node)) return false;
+			} else if(token.tipo.equals("INPUT")){
+				if(!cmdInput(node)) return false;
+			} else if(token.tipo.equals("IF")){
+				if(!cmdIf(node)) return false;
+			} else if(token.tipo.equals("WHILE")){
+				if(!cmdWhile(node)) return false;
+			} else if(token.tipo.equals("FOR")){
+				if(!cmdFor(node)) return false;
+			} else if(token.tipo.equals("VALOR_ID")){
+				if(!cmdExpressao(node)) return false;
+			} else if(token.tipo.startsWith("TIPO")){
+				if(!cmdDeclaracao(node)) return false;
+			} else if(token.tipo.equals("BREAK")){
+				if(!cmdBreak(node)) return false;
+			} else if(token.tipo.equals("CONTINUE")){
+				if(!cmdContinue(node)) return false;
+			} else if(token.tipo.equals("RETURN")){
+				if(!cmdReturn(node)) return false;
+			} else if(token.tipo.equals("EOF")) {
+				erro("(bloco) Unexpected EOF");
+				return false;
+			} else{
+				erro("(bloco) Unexpected Token");
+			}
+		}
+		return true;
 	}
 
-	void cmd_expressao( Arvore pai){
-		Arvore node = token_print("cmd_expressao");
+	private boolean cmdPrint(Arvore pai){
+		Arvore node = newTree("cmd print");
 		pai.add(node);
-		token_print(token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("AP")){
-			token_print(token,node);
-
-			parametros(node);
-
-			if(token.tipo.equals("FP")) token_print(token,node);
-			else erro("Esperado 19");
-			token = getNextToken();
-		} else if(token.tipo.equals("OP_ATR")){
-			token_print(token,node);
-
-			token = getNextToken();
-			calculo(node);
-
-		} else erro("token nao reconhecido");
-
-		if(token.tipo.equals("FIM_LINHA")) token_print(token,node);
-		else erro("fim linha");
+		addToken(token,node, "print(");
+		if(!valor(node)) return false;
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ");\n");
+		else{
+			erro("(cmd print) Esperado fim de linha");
+			return false;
+		}
+		return true;
 	}
 
-	void cmd_break( Arvore pai){
-		Arvore node = token_print("break");
+	private boolean cmdInput(Arvore pai){
+		Arvore node = newTree("cmd input");
 		pai.add(node);
-		token_print(token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("FIM_LINHA")) token_print(token,node);
-		else erro("Esperado 28");
-	}
-
-	void cmd_continue( Arvore pai){
-		Arvore node = token_print("continue");
-		pai.add(node);
-		token_print(token,node);
-
-		token = getNextToken();
-		if(token.tipo.equals("FIM_LINHA")) token_print(token,node);
-		else erro("Esperado 28");
-	}
-
-	void valor( Arvore pai){
-		Arvore node = token_print("valor");
-		pai.add(node);
-		if(!token.tipo.equals("VALOR_ID")
-		&& !token.tipo.equals("VALOR_INT")
-		&& !token.tipo.equals("VALOR_DOUBLE")
-		&& !token.tipo.equals("OP_ARI_SUBTRACAO")
-		&& !token.tipo.equals("VALOR_STRING")
-		&& !token.tipo.equals("VALOR_CHAR")
-		&& !token.tipo.equals("VALOR_BOOL")) erro("exsperado valor");
+		addToken(token,node);
+		String mapa_id = token.lexema;
 		if(token.tipo.equals("VALOR_ID")){
-			token_print(token,node);
-			variavel(node);
-		} else if( token.tipo.equals("OP_ARI_SUBTRACAO")
-				|| token.tipo.equals("VALOR_INT")
-				|| token.tipo.equals("VALOR_DOUBLE")){
-			numero(node);
-		} else{
-			token_print(token,node);
-			token = getNextToken();
+			String sufixo = "";
+			if(mapa.get(mapa_id) == "Void") erro("(cmd input) Tentando dar valor para uma variavel void");
+			else if(mapa.get(mapa_id) == "Char") sufixo = "()[0]";
+			else if(mapa.get(mapa_id) == "String") sufixo = "()";
+			else sufixo = mapa.get(mapa_id) + "()";
+			addToken(token,node, c.to_variavel(token.lexema) + " = sc.next" + sufixo);
 		}
-	}
-
-	void numero( Arvore pai ){
-		Arvore node = token_print("numero");
-		pai.add(node);
-
-		if( token.tipo.equals("OP_ARI_SUBTRACAO")){
-			token_print(token,node);
-			token = getNextToken();
+		else{
+			erro("(cmd input) Esperado variavel");
+			return false;
 		}
-		token_print(token,node);
-		token = getNextToken();
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd input) Esperado fim de linha");
+			return false;
+		}
+		return true;
 	}
 
-	void variavel( Arvore pai){
-		Arvore node = token_print("variavel");
+	private boolean cmdReturn(Arvore pai){
+		Arvore node = newTree("cmd return");
 		pai.add(node);
-
-		token = getNextToken();
-		if(token.tipo.equals("AP")){
-			Arvore filho = token_print("chamar_funcao");
-			node.add(filho);
-			token_print(token,filho);
-
-			parametros(node);
-
-			if(token.tipo.equals("FP")) token_print(token,filho);
-			else erro("Esperado 19");
-			token = getNextToken();
-		} 
-
+		addToken(token,node, "return ");
+                
+		if(!token.tipo.equals("FIM_LINHA")){
+			if(!valor(node)) return false;
+		}
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd return) Esperado fim de linha");
+			return false;
+		}
+		return true;
 	}
 
-	void cmd_declarar( Arvore pai){
-		Arvore node = token_print( "cmd_declarar");
+	private boolean cmdBreak(Arvore pai){
+		Arvore node = newTree("cmd break");
 		pai.add(node);
-		token_print(token,node);
+		addToken(token,node,"break");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node,";\n");
+		else{
+			erro("(cmd break) Esperado fim de linha");
+			return false;
+		}
+		return true;
+	}
 
-		token = getNextToken();
-		if(!token.tipo.equals("VALOR_ID")) erro("esperado id");
-		token_print( token,node);
+	private boolean cmdContinue(Arvore pai){
+		Arvore node = newTree("cmd continue");
+		pai.add(node);
+		tradutor(forIncrease.peek());
+		addToken(token,node,"continue");
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node,";\n");
+		else{
+			erro("(cmd continue) Esperado fim de linha");
+			return false;
+		}
+		return true;
+	}
 
-		token = getNextToken();
+	private boolean cmdExpressao(Arvore pai){
+		Arvore node = newTree("cmd expressao");
+		pai.add(node);
+		if(!expressao(node)) return false;
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd expressao) Esperado fim de linha");
+			return false;
+		}
+		return true;
+	}
+
+	private boolean expressao(Arvore pai){
+		Arvore node = newTree("expressao");
+		pai.add(node);
+		addToken(token,node, c.to_variavel(token.lexema));
+		if(!sufixExpressao(node)) return false;
+		return true;
+	}
+
+	private boolean sufixExpressao(Arvore pai){
+		Arvore node = newTree("sufix expressao");
+		pai.add(node);
 		if(token.tipo.equals("OP_ATR")){
-			token_print(token,node);
-			token = getNextToken();
-			calculo(node);
+			addToken(token,node, " = ");
+			if(!calculo(node)) return false;
+		} else if(token.tipo.equals("AP")){
+			addToken(token,node, "(");
+			if(!token.tipo.equals("FP")){
+				if(!param(node)) return false;
+			}
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
+			else erro("(sufix expressao) Esperado fechar Parenteses");
+		} else{
+			erro("(sufix expessao) Expressao Invalida");
+			return false;
 		}
-
-		if(!token.tipo.equals("FIM_LINHA")) erro("fim linha");
-		token_print( token,node);
+		return true;
 	}
 
-	void condicao( Arvore pai){
-		Arvore node = token_print("condicao");
+	private boolean cmdDeclaracao(Arvore pai){
+		Arvore node = newTree("cmd declaracao");
+		pai.add(node);
+		if(!declaracao(node)) return false;
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd declaracao) Esperado fim de linha");
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean declaracao(Arvore pai){
+		Arvore node = newTree("declaracao");
+		pai.add(node);
+		String mapa_tipo = token.lexema;
+
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
+		if(!tipo(node)) return false;
+		System.setOut(saida);
+
+		String mapa_id = token.lexema;
+		if(token.tipo.equals("VALOR_ID")) addToken(token,node, "var " + c.to_variavel(token.lexema) + ": " + exp.toString());
+		else erro("(declaracao) Esperado nome da variavel");
+		mapa.put(mapa_id, c.to_tipo(mapa_tipo));
+
+		if(token.tipo.equals("OP_ATR")){
+			addToken(token,node, " = ");
+			if(!calculo(node)) return false;
+		} else{
+			tradutor(" = " + c.to_val(mapa_tipo));
+		}
+		return true;
+	}
+
+	private boolean cmdIf(Arvore pai){
+		Arvore node = newTree("cmd if");
+		pai.add(node);
+		addToken(token,node, "if");
+
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
+		else{
+			erro("(cmd if) Esperado abrir parenteses (18)");
+			return false;
+		}
+
+		if(!condicao(node)) return false;
+
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
+		else{
+			erro("(cmd if) Esperado fechar parenteses (19)");
+			return false;
+		}
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(cmd if) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(cmd if) Esperado fechar Chaves");
+			return false;
+		}
+		
+		if(!sufixIf(node)) return false;
+		return true;
+	}
+
+	private boolean sufixIf(Arvore pai){
+		Arvore node = newTree("sufix if");
+		pai.add(node);
+		if(token.tipo.equals("ELSEIF")){
+			if(!cmdElseIf(node)) return false;
+		} else if(token.tipo.equals("ELSE")){
+			if(!cmdElse(node)) return false;
+		} return true;
+	}
+
+	private boolean cmdElseIf(Arvore pai){
+		Arvore node = newTree("elseif");
+		pai.add(node);
+		addToken(token,node, "else if");
+
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
+		else{
+			erro("(cmd else if) Esperado abrir parenteses (18)");
+			return false;
+		}
+
+		if(!condicao(node)) return false;
+
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
+		else{
+			erro("(cmd else if) Esperado fechar parenteses (19)");
+			return false;
+		}
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(cmd else if) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(cmd else if) Esperado fechar Chaves");
+			return false;
+		}
+		
+		if(!sufixIf(node)) return false;
+		return true;
+	}
+
+	private boolean cmdElse(Arvore pai){
+		Arvore node = newTree("else");
+		pai.add(node);
+		addToken(token,node, "else");
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(cmd else) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(cmd else) Esperado fechar Chaves");
+			return false;
+		}
+		return true;
+	}
+
+	private boolean cmdWhile(Arvore pai){
+		Arvore node = newTree("while");
+		pai.add(node);
+		addToken(token,node, "while");
+
+		forIncrease.push("");
+
+		if(token.tipo.equals("AP")) addToken(token,node, "(");
+		else{
+			erro("(cmd while) Esperado abrir parenteses (18)");
+			return false;
+		}
+
+		if(!condicao(node)) return false;
+
+		if(token.tipo.equals("FP")) addToken(token,node, ")");
+		else{
+			erro("(cmd while) Esperado fechar parenteses (19)");
+			return false;
+		}
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(cmd while) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(cmd while) Esperado fechar Chaves");
+			return false;
+		}
+
+		forIncrease.pop();
+
+		return true;
+	}
+
+	private boolean cmdFor(Arvore pai){
+		Arvore node = newTree("for");
+		pai.add(node);
+		// addToken(token,node, "for");
+		addToken(token,node,"run {\n");
+
+		if(token.tipo.equals("AP")) addToken(token,node, "");
+		else{
+			erro("(cmd for) Esperado abrir parenteses (18)");
+			return false;
+		}
+
+		if(!declaracao(node)) return false;
+
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd for) Esperado fim linha");
+			return false;
+		}
+
+		tradutor("while(");
+		if(!condicao(node)) return false;
+
+		if(token.tipo.equals("FIM_LINHA")) addToken(token,node, ")");
+		else{
+			erro("(cmd for) Esperado fim linha");
+			return false;
+		}
+
+		ByteArrayOutputStream exp = new ByteArrayOutputStream();
+		PrintStream local_saida = new PrintStream(exp);
+		System.setOut(local_saida);
+		// exp
+		if(!expressao(node)) return false;
+		
+		if(token.tipo.equals("FP")) addToken(token,node, ";\n");
+		else{
+			erro("(cmd for) Esperado fechar parenteses (19)");
+			return false;
+		}
+		//exp
+
+		System.setOut(saida);
+
+		forIncrease.push(exp.toString());
+
+		if(token.tipo.equals("ACHA")) addToken(token,node, "{\n");
+		else{
+			erro("(cmd for) Esperado abrir Chaves");
+			return false;
+		}
+
+		if(!bloco(node)) return false;
+
+		tradutor(exp.toString()); // exp
+
+		if(token.tipo.equals("FCHA")) addToken(token,node, "}\n");
+		else{
+			erro("(cmd for) Esperado fechar Chaves");
+			return false;
+		}
+
+		tradutor("}\n");
+
+		forIncrease.pop();
+
+		return true;
+	}
+
+	private boolean param(Arvore pai){
+		Arvore node = newTree("parametros");
+		pai.add(node);
+
+		if(!valor(node)) return false;
+
+		if(!sufixParam(node)) return false;
+		return true;
+	}
+	private boolean sufixParam(Arvore pai){
+		Arvore node = newTree("sufix parametros");
+		pai.add(node);
+		if(token.tipo.equals("VIRGULA")){
+			addToken(token,node, ", ");
+			if(!param(node)) return false;
+		}
+		return true;
+	}
+	
+	private boolean condicao(Arvore pai){
+		Arvore node = newTree("condicao");
+		pai.add(node);
+
+		if(token.tipo.startsWith("BOOL_")){
+			if(token.tipo.endsWith("TRUE")) addToken(token,node,"true");
+			else if(token.tipo.endsWith("FALSE")) addToken(token,node,"false");
+		} else if(token.tipo.equals("AP")){
+			addToken(token,node, "(");
+			if(!condicao(node)) return false;
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
+			else erro("(condicao) Esperado fechar Parenteses");
+		} else{
+			if(!calculo(node)) return false;
+
+			if(token.tipo.startsWith("OP_REL")){
+				if(token.tipo.endsWith("MAIOR")) addToken(token,node, " > ");
+				else if(token.tipo.endsWith("MENOR")) addToken(token,node, " < ");
+				else if(token.tipo.endsWith("DIFF")) addToken(token,node, " != ");
+				else if(token.tipo.endsWith("MAIOR_IGUAL")) addToken(token,node, " >= ");
+				else if(token.tipo.endsWith("MENOR_IGUAL")) addToken(token,node, " <= ");
+				else if(token.tipo.endsWith("IGUAL")) addToken(token,node, " == ");
+			} else{
+				erro("(condicao) Esperado Operador relacional");
+				return false;
+			}
+
+			if(!calculo(node)) return false;
+		}
+		if(!sufixCondicao(node)) return false;
+		return true;
+	}
+
+	private boolean sufixCondicao(Arvore pai){
+		Arvore node = newTree("sufix condicao");
+		pai.add(node);
+		if(token.tipo.startsWith("OP_LOG")){
+			if(token.tipo.endsWith("AND")) addToken(token,node, " && ");
+			else if(token.tipo.endsWith("OR")) addToken(token,node, " || ");
+			if(!condicao(node)) return false;
+		}
+		return true;
+	}
+
+	private boolean calculo(Arvore pai){
+		Arvore node = newTree("calculo");
+		pai.add(node);
+
+		if(token.tipo.equals("AP")){
+			addToken(token,node, "(");
+			if(!calculo(node)) return false;
+			if(token.tipo.equals("FP")) addToken(token,node,")");
+			else erro("(calculo) Esperado fechar Parenteses");
+		} else{
+			if(!valor(node)) return false;
+		}
+		if(!sufixCalculo(node)) return false;
+		return true;
+	}
+
+	private boolean sufixCalculo(Arvore pai){
+		Arvore node = newTree("sufix calculo");
+		pai.add(node);
+		if(token.tipo.startsWith("OP_ARI")){
+			if(token.tipo.endsWith("SOMA")) addToken(token,node, " + ");
+			else if(token.tipo.endsWith("SUBTRACAO")) addToken(token,node, " - ");
+			else if(token.tipo.endsWith("MULTIPLICACAO")) addToken(token,node, " * ");
+			else if(token.tipo.endsWith("DIVISAO")) addToken(token,node, " / ");
+			else if(token.tipo.endsWith("MODULO")) addToken(token,node, " % ");
+                        
+			if(!calculo(node)) return false;
+		}
+		return true;
+	}
+
+	private boolean valor(Arvore pai){
+		Arvore node = newTree("valor");
+		pai.add(node);
+		if(token.tipo.equals("OP_ARI_SUBTRACAO")){
+			if(!nums(node)) return false;
+		} else if(token.tipo.equals("VALOR_INT")){
+			if(!nums(node)) return false;
+		} else if(token.tipo.equals("VALOR_DOUBLE")){
+			if(!nums(node)) return false;
+		} else if(token.tipo.equals("VALOR_ID")){
+			if(!variavel(node)) return false;
+		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
+		else if(token.tipo.equals("VALOR_CHAR")) addToken(token,node);
+		else if(token.tipo.startsWith("BOOL_")){
+			if(token.tipo.endsWith("TRUE")) addToken(token,node,"true");
+			else if(token.tipo.endsWith("FALSE")) addToken(token,node,"false");
+		} else if(token.tipo.equals("VALOR_STRING")) addToken(token,node, c.to_str(token.lexema));
+		else erro("(valor) Esperado valor");
+		return true;
+	}
+
+	private boolean variavel(Arvore pai){
+		Arvore node = newTree("variavel");
+		pai.add(node);
+		addToken(token,node, c.to_variavel(token.lexema));
+		if(!sufixVariavel(node)) return false;
+		return true;
+	}
+
+	private boolean sufixVariavel(Arvore pai){
+		Arvore node = newTree("sufix variavel");
 		pai.add(node);
 		if(token.tipo.equals("AP")){
-			token_print(token,node);
-			token = getNextToken();
-			condicao(node);
-			if(token.tipo.equals("FP")) token_print(token,node);
-			else erro("esperado 19");
-			token = getNextToken();
-			if(token.tipo.startsWith("OP_LOG")){
-				token_print(token,node);
-				token = getNextToken();
-				condicao(node);
+			addToken(token,node, "(");
+			if(!token.tipo.equals("FP")){
+				if(!param(node)) return false;
 			}
-		} else{
-			calculo(node);
-			op_relacional(node);
-			token = getNextToken();
-			calculo(node);
-			if(token.tipo.startsWith("OP_LOG")){
-				token_print(token,node);
-				token = getNextToken();
-				condicao(node);
-			}
-		}
-	}
-
-	void expressao( Arvore pai){
-		Arvore node = token_print("expressao");
-		pai.add(node);
-
-		token = getNextToken();
-		if(token.tipo.startsWith("TIPO")){
-			token_print( token,node);
-			token = getNextToken();
-		}
-
-		if(token.tipo.equals("VALOR_ID")) token_print( token,node);
-		else erro("esperado id");
-
-		token = getNextToken();
-		if(token.tipo.equals("OP_ATR")) token_print( token,node);
-		else erro("op atribuicao");
-
-		token = getNextToken();
-		calculo(node);
-	}
-
-	void calculo( Arvore pai){
-		Arvore node = token_print("calculo");
-		pai.add(node);
-		if(token.tipo.equals("AP")){
-			token_print(token,node);
-			token = getNextToken();
-			calculo(node);
-			if(token.tipo.equals("FP")) token_print(token,node);
-			else erro("esperado 19");
-			token = getNextToken();
-			if(token.tipo.startsWith("OP_ARI")){
-				token_print(token,node);
-				token = getNextToken();
-				calculo(node);
-			}
-		} else{
-			valor(node);
-			if(token.tipo.startsWith("OP_ARI")){
-				token_print(token,node);
-				token = getNextToken();
-				calculo(node);
-			}
-		}
-	}
-
-	void op_relacional( Arvore pai){
-		Arvore node = token_print("op_relacional");
-		pai.add(node);
-		if(!token.tipo.equals("OP_REL_MAIOR")
-		&& !token.tipo.equals("OP_REL_MENOR")
-		&& !token.tipo.equals("OP_REL_DIFF")
-		&& !token.tipo.equals("OP_REL_IGUAL")
-		&& !token.tipo.equals("OP_REL_MAIOR_IGUAL")
-		&& !token.tipo.equals("OP_REL_MENOR_IGUAL"))
-			erro("op relacional faltnado");
-		token_print(token,node);
-	}
-
-	void parametros( Arvore pai){
-		Arvore node = token_print("parametros");
-		pai.add(node);
-
-		token = getNextToken();
-		if(token.tipo.startsWith("VALOR")){
-			if(token.tipo.equals("VALOR_ID")) variavel(node);
+			if(token.tipo.equals("FP")) addToken(token,node, ")");
 			else{
-				token_print(token,node);
-				token = getNextToken();
+				erro("(sufix variavel) Esperado fechar parenteses");
+				return false;
 			}
-		} else return;
-
-		while(true){
-			if(token.tipo.equals("VIRGULA")){
-				token_print(token,node);
-
-				token = getNextToken();
-				if(token.tipo.startsWith("VALOR")){
-					if(token.tipo.equals("VALOR_ID")) variavel(node);
-					else{
-						token_print(token,node);
-						token = getNextToken();
-					}
-				} else erro("esperado parametro");
-			} else break;
 		}
+		return true;
 	}
+
+	private boolean nums(Arvore pai){
+		Arvore node = newTree("numeros");
+		pai.add(node);
+		if(token.tipo.equals("OP_ARI_SUBTRACAO")){
+			addToken(token,node, "-");
+			if(!sufixNums(node)) return false;
+		} else addToken(token,node , c.to_decimal(token.lexema));
+		return true;
+	}
+	private boolean sufixNums(Arvore pai){
+		Arvore node = newTree("sufix numeros");
+		pai.add(node);
+		if(token.tipo.equals("VALOR_INT")
+		|| token.tipo.equals("VALOR_DOUBLE"))
+			addToken(token,node, c.to_decimal(token.lexema));
+		else erro("(sufix num) Esperado valor numerico");
+		return true;
+	}
+        
 }
