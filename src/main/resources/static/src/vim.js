@@ -274,7 +274,7 @@ function del_linha(){
 	vim.yank = middleText;
 	vim.editor.value = newText;
 	vim.set_pos(left);
-	chmod("general");
+	vim.chmod("general");
 }
 
 function del_fim_linha(){
@@ -290,7 +290,7 @@ function del_fim_linha(){
 	vim.yank = middleText;
 	vim.editor.value = newText;
 	vim.set_pos(left);
-	chmod("general");
+	vim.chmod("general");
 }
 
 function substituir(){
@@ -311,7 +311,7 @@ function excluir(){
 	vim.yank = middleText;
 	vim.editor.value = newText;
 	vim.set_pos(left);
-	chmod("general");
+	vim.chmod("general");
 }
 
 function paste(p){
@@ -329,7 +329,7 @@ function paste(p){
 	const newText = text.substring(0,left) + vim.yank + text.substring(left,totalChars);
 	vim.editor.value = newText;
 	vim.set_pos(left);
-	chmod("general");
+	vim.chmod("general");
 }
 
 function yank(){
