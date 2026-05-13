@@ -35,7 +35,26 @@ class Vim{
 		status_bar.appendChild(state);
 		status_bar.appendChild(command);
 
-		this.editor.value = "25\n               --- Vim Comands---\n\n--- General Mode ---    | --- Visual Mode ---\nmove-around: h, j, k, l | move-around: h, j, k, l\nappend-end-line: A      | start-line: 0\nstart-line: 0           | end-line: A\nsubstitute: s           | substitute-selection: s\ndelete-char: x          | delete-selection: x, dd, D\ndelete-line: dd         | yank: y\ndelete-end-line: D      | general-mode: Esc\npaste: p                | visual-line-mode: V\ninsert-mode: i          |\nvisual-mode: v          | --- Visual Line Mode ---\nvisual-line-mode: V     | move-around: j, k\n                        | substitute-selection: s\n--- insert Mode ---     | delete-selection: x, dd, D\ngeneral-mode: Esc       | yank: y\n                        | general-mode: Esc\n                        | visual-mode: v\n26"
+		this.editor.value =
+			"\n25             --- Vim Comands---\n"+
+			"\n"+
+			"--- General Mode ---    | --- Visual Mode ---\n"+
+			"move-around: h, j, k, l | move-around: h, j, k, l\n"+
+			"append-end-line: A      | start-line: 0\n" + 
+			"start-line: 0           | end-line: A\n"+
+			"substitute: s           | substitute-selection: s\n"+
+			"delete-char: x          | delete-selection: x, dd, D\n"+
+			"delete-line: dd         | yank: y\n"+
+			"delete-end-line: D      | general-mode: Esc\n"+
+			"paste: p                | visual-line-mode: V\n"+
+			"insert-mode: i          |\n"+
+			"visual-mode: v          | --- Visual Line Mode ---\n"+
+			"visual-line-mode: V     | move-around: j, k\n"+
+			"undo: u                 | substitute-selection: s\n"+
+			"redo: r                 | delete-selection: x, dd, D\n"+
+			"                        | yank: y\n"+
+			"--- insert Mode ---     | general-mode: Esc\n"+
+			"general-mode: Esc       | visual-mode: v\n26";
 		this.visual_anchor = 0;
 		this.visual_anchor2 = 0;
 		this.visual_cursor = 0;
