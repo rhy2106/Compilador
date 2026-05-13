@@ -1,7 +1,7 @@
 const textarea = document.getElementById("code");
 const fundo = document.getElementById("fundo");
-
 let palavras = [];
+let animacao = undefined;
 
 function criarLetras() {
 	const idChars = '[ !@#$%&*()\\-+/?:;.,<>|{}\\[\\]^~\'\"=_\\\\]';
@@ -60,9 +60,6 @@ function criarLetras() {
 	});
 }
 
-
-textarea.addEventListener("input", criarLetras);
-
 function animar() {
 	palavras.forEach(palavra => {
 
@@ -70,30 +67,35 @@ function animar() {
 		const h = palavra.el.offsetHeight;
 
 		palavra.x = Math.max(0,Math.min(palavra.x + palavra.vx, fundo.clientWidth - w));
-		palavra.y = Math.max(0,Math.min(palavra.y + palavra.vy, fundo.clientHeight - h));
+		palavra.y = Math.max(50,Math.min(palavra.y + palavra.vy, fundo.clientHeight - h));
 		palavra.rotate = (palavra.rotate < 0 ? (palavra.rotate - 5) % 360 : (palavra.rotate + 5) % 360);
 
 		if( palavra.x + palavra.vx <= 0 ||
 			palavra.x + palavra.vx >= fundo.clientWidth - w) palavra.vx *= -1;
-		if( palavra.y + palavra.vy <= 0 ||
+		if( palavra.y + palavra.vy <= 50 ||
 			palavra.y + palavra.vy >= fundo.clientHeight - h) palavra.vy *= -1;
 
 		palavra.el.style.transform = `translate(${palavra.x}px, ${palavra.y}px) rotate(${palavra.rotate}deg)`;
 	});
+	animacao = requestAnimationFrame(animar);
 
-	requestAnimationFrame(animar);
 }
 
-animar();
-criarLetras();
+textarea.addEventListener("keyup", criarLetras);
 
 const observer = new ResizeObserver(entries => {
 	fundo.style.height = Math.max(window.innerHeight, document.body.offsetHeight) + "px";
 });
 
 function boost(){
-	if(fundo.classList.contains("naovisivel")) fundo.classList.remove("naovisivel");
-	else fundo.classList.add("naovisivel");
+	if(animacao){
+		fundo.classList.add("naovisivel");
+		cancelAnimationFrame(animacao);
+		animacao = undefined;
+	} else{
+		animacao = requestAnimationFrame(animar);
+		fundo.classList.remove("naovisivel");
+	}
 }
 
 observer.observe(document.body);
