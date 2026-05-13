@@ -1,7 +1,7 @@
 package CompiladorTest;
 import Model.Token;
 import Model.Lexer;
-import Model.Parser2;
+import Model.Parser;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -10,14 +10,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ParserTest{
 	private Lexer lexer;
-	private Parser2 parser;
+	private Parser parser;
 
 	private boolean analise(String body){
 		boolean ans;
 		try{
 			Lexer lexer = new Lexer(body);
 			List<Token> tokens = lexer.getTokens();
-			Parser2 parser = new Parser2(tokens);
+			Parser parser = new Parser(tokens);
 			parser.parse();
 			ans = true;
 		} catch(Exception e){

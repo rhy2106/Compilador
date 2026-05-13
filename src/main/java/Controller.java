@@ -23,7 +23,7 @@ public class Controller extends Exception{
 	@PostMapping("/todecimal")
 	public String to_decimal(@RequestBody String body){
 		System.out.println("/todecimal");
-		Conversor c= new Conversor();
+		Conversor c = new Conversor();
 		String ans = "" + c.to_decimal(body);
 		System.out.println();
 		return ans;
@@ -36,7 +36,7 @@ public class Controller extends Exception{
 		try{
 			Lexer lexer = new Lexer(body);
 			List<Token> tokens = lexer.getTokens();
-			Parser2 parser = new Parser2(tokens);
+			Parser parser = new Parser(tokens);
 			if(!parser.parse()){
 				response.put("success",false);
 				response.put("erro","Erro ao formar arvore");

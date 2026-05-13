@@ -1,7 +1,7 @@
-# NOME DA LINGUAGEM
+# ???
 
 # Descrição
-Compilador da Linguagem `NOME DA LINGUAGEM`.
+Compilador da Linguagem `???`.
 Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
 
 # Sumario
@@ -12,7 +12,7 @@ Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
 - [Autores](#Autores)
 
 # To-Do
-- [ ] Documentação da Linguagem
+- [X] Documentação da Linguagem
 - [X] Analise Lexica:
     - [X] Reconhecer tokens
 - [X] Analise Sintatica:
@@ -23,27 +23,28 @@ Projeto desenvolvido para a disciplina `CCM510 - COMPILADORES`.
 	- [ ] Detectar variaveis recebendo valores errados ( map )
     - [ ] Verificar se a função possui Return
 	- [ ] Detectar limite de inteiro e double
-- [ ] Erros claros:
+- [X] Erros claros:
     - [X] Linha e Coluna
     - [X] Indicar o lexema errado
-    - [ ] Mensagem clara do erro
-- [ ] Tradução para linguagem Kotlin:
+    - [X] Mensagem clara do erro
+- [X] Tradução para linguagem Kotlin:
     - [X] calculadora base 26
-    - [ ] Tradução Simbolo -> Letra
-    - [ ] Prefixo ( Evitar variaveis com nome de palavras reservadas )
+    - [X] Tradução Simbolo -> Letra
+    - [X] Prefixo ( Evitar variaveis com nome de palavras reservadas )
     - [ ] Arrumar arredondamento de numeros
 - [ ] Testes
     - [X] Analise Lexica
     - [X] Analise Sintatica
     - [ ] Analise Semantica
+    - [ ] Traducao
     - [ ] Calculadora
-- [ ] ide:
+- [X] ide:
 	- [X] editor de texto
     - [X] highlight
     - [X] vim
     - [X] arvore
     - [X] erro de compilação
-    - [ ] codigo traduzido
+    - [X] codigo traduzido
 
 # Tecnologias
 - Spring Boot

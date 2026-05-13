@@ -5,7 +5,20 @@ body{
 	color: white;
 	font-family: monospace;
 	padding-bottom:50px;
-	padding-top:50px;
+}
+
+.header{
+	text-align: right;
+	height:50px;
+	width: 100%;
+	background-color: #565656;
+}
+
+.header button{
+	margin: 10px;
+	height: 30px;
+	width: auto;
+	padding: 5px;
 }
 
 .naovisivel{
@@ -99,7 +112,6 @@ th, td{
 	margin: auto;
 	width: auto;
 	border: solid 1px;
-	border-bottom: 0px;
 }
 
 .tabela{
