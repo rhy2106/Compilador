@@ -1,5 +1,5 @@
 const header = document.getElementById("header");
-const botoes = ['boost', 'highlight']
+const botoes = ['boost','boost_color', 'highlight'];
 
 function setup(){
 	for(let i = 0; i < botoes.length; i++){
