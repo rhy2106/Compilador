@@ -2,6 +2,7 @@ const textarea = document.getElementById("code");
 const fundo = document.getElementById("fundo");
 let palavras = [];
 let animacao = undefined;
+let color = true;
 
 function criarLetras() {
 	const idChars = '[ !@#$%&*()\\-+/?:;.,<>|{}\\[\\]^~\'\"=_\\\\]';
@@ -28,11 +29,19 @@ function criarLetras() {
 	const matches = [...textarea.value.matchAll(regex)];
 	const ignore = ['vazio','comentario'];
 	
-	const texto = matches.filter( m => {
-		const grupo = Object.keys(m.groups).find(key => m.groups[key] !== undefined)
-		return !ignore.includes(grupo);
-	}).map( m => m[0] );
-	console.log(texto);
+	let lastIndex = 0;
+	let match;
+
+	const texto = [];
+	while((match = regex.exec(textarea.value)) !== null){
+		const grupo = Object.keys(match.groups).find(key => match.groups[key] !== undefined)
+		if(!ignore.includes(grupo)){
+			texto.push({
+				text: match[0],
+				group: `${grupo}`
+			});
+		}
+    }
 
 	if(texto.length > palavras.length){
 		for(let i = palavras.length; i < texto.length; i++){
@@ -45,7 +54,7 @@ function criarLetras() {
 				y: Math.random() * fundo.clientHeight,
 				vx: (Math.random() - 0.5) * 4,
 				vy: (Math.random() - 0.5) * 4,
-				rotate: (Math.random() - 0.5) * 720
+				rotate: (Math.random() - 0.5) * 720,
 			});
 		}
 	} else if(texto.length < palavras.length){
@@ -56,7 +65,9 @@ function criarLetras() {
 	}
 	
 	palavras.forEach((letra, i) => {
-	    letra.el.textContent = texto[i];
+	    letra.el.textContent = texto[i].text;
+		if(color) letra.el.classList.add(texto[i].group);
+		else letra.el.className = "letra";
 	});
 }
 
@@ -96,6 +107,11 @@ function boost(){
 		animacao = requestAnimationFrame(animar);
 		fundo.classList.remove("naovisivel");
 	}
+}
+
+function boost_color(){
+	color = !color;
+	criarLetras();
 }
 
 observer.observe(document.body);
