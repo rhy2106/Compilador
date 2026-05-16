@@ -6,7 +6,7 @@ public class Identificadores extends AFD{
 	public Token evaluate(CharacterIterator code,int linha,int coluna){
 		Token t = null;
 		String s = "";
-		char[] caracteres = {'!','@','#','$','%', '&','(',')','*','-', '+','/','?',';',':', '<','>','\\','|','/', '{','}','\'','\"',' ', '=','_','[',']','.','^'};
+		char[] caracteres = {'!','@','#','$','%', '&','(',')','*','-', '+','/','?',';',':', '<','>','\\','|','/', '{','}','\'','\"',' ', '=','_','[',']','.','^',','};
 		boolean yes = true;
 		while(yes){
 			yes = false;
